@@ -1,0 +1,75 @@
+<header>
+  <h1>Kitchen Cost Manager</h1>
+  <p>Calculate ingredient costs and manage recipe pricing.</p>
+</header>
+
+<main>
+  <section>
+    <h2>Add ingredient</h2>
+
+    <form>
+      <label for="nombre">Nombre del ingrediente</label>
+      <input id="nombre" type="text" placeholder="Ej: Carne de vacuno" required>
+      <label for="unidad">Unidad de compra</label>
+    <select id="unidad" required>
+        <option value="kg">kg</option>
+        <option value="g">g</option>
+        <option value="l">l</option>
+        <option value="ml">ml</option>
+        <option value="unidad">unidad</option>
+    </select>
+      <label for="cantidad">Cantidad comprada</label>
+      <input
+        id="cantidad"
+        type="number"
+        min="0.01"
+        step="0.01"
+        placeholder="Ej: 2.5"
+        required>
+      <label for="precio">Precio de compra</label>
+      <input
+        id="precio"
+        type="number"
+        min="0"
+        step="0.01"
+        placeholder="Ej: 15.99"
+        required>
+      <label for="merma">Merma (%)</label>
+        <input
+        id="merma"
+        type="number"
+        min="0"
+        max="100"
+        step="0.01"
+        placeholder="Ej: 10">
+      <button type="submit">Agregar</button>
+    </form>
+  </section>
+  <section>
+    <h2>Ingredients</h2>
+
+    <table>
+      <thead>
+    <tr>
+      <th>Nombre</th>
+      <th>Unidad</th>
+      <th>Cantidad</th>
+      <th>Precio</th>
+      <th>Merma</th>
+      <th>Acción</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td>Carne</td>
+      <td>kg</td>
+      <td>2.5</td>
+      <td>£50</td>
+      <td>10%</td>
+      <td><button type="button">Eliminar</button></td>
+    </tr>
+  </tbody>
+    </table>
+  </section>
+</main>
