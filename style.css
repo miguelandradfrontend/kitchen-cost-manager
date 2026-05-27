@@ -20,15 +20,28 @@ form {
 
 input,
 select {
-  padding: 8px;
+  width: 100%;
+  padding: 10px;
   font-size: 1rem;
+}
+
+label {
+  font-weight: bold;
 }
 
 section {
   margin-bottom: 40px;
-  padding: 24px;
+}
+
+.btn-primary {
+  width: fit-content;
+  padding: 10px 20px;
+}
+
+.card {
   border: 1px solid #ddd;
   border-radius: 12px;
+  padding: 24px;
 }
 
 h1 {
@@ -47,7 +60,7 @@ button {
 
 table {
   width: 100%;
-    border-collapse: collapse;
+  border-collapse: collapse;
 }
 
 th,
@@ -56,6 +69,7 @@ td {
 }
 
 th {
+  padding: 12px;
   text-align: left;
 }
 
