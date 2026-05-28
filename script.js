@@ -13,13 +13,16 @@ function renderizarIngredientes() {
 
   ingredientes.forEach(function (ingrediente) {
     const row = document.createElement("tr");
-
+    const cantidadUtil = calcularCantidadUtil(ingrediente);
+    const costeUtil = calcularCosteUtil(ingrediente);
     row.innerHTML = `
       <td>${ingrediente.nombre}</td>
       <td>${ingrediente.unidad}</td>
       <td>${ingrediente.cantidad}</td>
       <td>${ingrediente.precio} €</td>
       <td>${ingrediente.merma}%</td>
+      <td>${cantidadUtil.toFixed(2)} ${ingrediente.unidad}</td>
+      <td>${costeUtil.toFixed(2)} €/${ingrediente.unidad}</td>
       <td>
         <button 
           class="btn-danger"
@@ -45,6 +48,16 @@ function cargarIngredientes() {
     ingredientes = JSON.parse(ingredientesGuardados);
     renderizarIngredientes();
   }
+}
+
+function calcularCantidadUtil(ingrediente) {
+  return ingrediente.cantidad * (1 - ingrediente.merma / 100);
+}
+
+function calcularCosteUtil(ingrediente) {
+  const cantidadUtil = calcularCantidadUtil(ingrediente);
+
+  return ingrediente.precio / cantidadUtil;
 }
 
 form.addEventListener("submit", function (event) {
