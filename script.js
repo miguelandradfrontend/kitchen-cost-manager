@@ -15,6 +15,7 @@ function renderizarIngredientes() {
     const row = document.createElement("tr");
     const cantidadUtil = calcularCantidadUtil(ingrediente);
     const costeUnitario = calcularCosteUnitario(ingrediente);
+    const costeBase = calcularCosteBase(ingrediente);
     row.innerHTML = `
       <td>${ingrediente.nombre}</td>
       <td>${ingrediente.unidad}</td>
@@ -23,22 +24,12 @@ function renderizarIngredientes() {
       <td>${ingrediente.merma.toFixed(2)}%</td>
       <td>${cantidadUtil.toFixed(2)} ${ingrediente.unidad}</td>
       <td>${costeUnitario.toFixed(2)} €/${ingrediente.unidad}</td>
-      <td>
-        <button
-            class="btn-edit"
-            data-id="${ingrediente.id}"
-            type="button">
-            Editar
-        </button>
-        <button
-            class="btn-danger"
-            data-id="${ingrediente.id}"
-            type="button">
-            Eliminar
-        </button>
+      <td>${costeBase.toFixed(2)} €/base</td>
+        <button class="btn-edit" data-id="${ingrediente.id}" type="button">  ✏️ Editar</button>
+        <button class="btn-danger" data-id="${ingrediente.id}" type="button">  🗑️ Eliminar</button>
       </td>
     `;
-
+    
     tbody.appendChild(row);
   });
 }
@@ -139,5 +130,23 @@ tbody.addEventListener("click", function (event) {
     ingredienteEditando = id;
   }
 });
+function convertirUnidadBase(ingrediente) {
+if (ingrediente.unidad === "kg") {
+    return ingrediente.cantidad * 1000;
+  }
 
+  if (ingrediente.unidad === "l") {
+    return ingrediente.cantidad * 1000;
+  }
+
+  return ingrediente.cantidad;
+}
+
+function calcularCosteBase(ingrediente) {
+
+  const cantidadBase = convertirUnidadBase(ingrediente);
+
+  return ingrediente.precio / cantidadBase;
+}
 cargarIngredientes();
+
