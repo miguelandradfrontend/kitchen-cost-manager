@@ -19,8 +19,8 @@ function renderizarIngredientes() {
       <td>${ingrediente.nombre}</td>
       <td>${ingrediente.unidad}</td>
       <td>${ingrediente.cantidad}</td>
-      <td>${ingrediente.precio} €</td>
-      <td>${ingrediente.merma}%</td>
+      <td>${ingrediente.precio.toFixed(2)} €</td>
+      <td>${ingrediente.merma.toFixed(2)}%</td>
       <td>${cantidadUtil.toFixed(2)} ${ingrediente.unidad}</td>
       <td>${costeUtil.toFixed(2)} €/${ingrediente.unidad}</td>
       <td>
@@ -71,6 +71,15 @@ form.addEventListener("submit", function (event) {
     precio: Number(precioInput.value),
     merma: Number(mermaInput.value)
   };
+
+  const ingredienteDuplicado = ingredientes.find(function (ingrediente) {
+  return ingrediente.nombre.toLowerCase() === nombreInput.value.toLowerCase();
+});
+
+if (ingredienteDuplicado) {
+  alert("Este ingrediente ya existe.");
+  return;
+}
 
     ingredientes.push(ingrediente);
     guardarIngredientes();
