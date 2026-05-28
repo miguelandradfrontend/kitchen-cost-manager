@@ -6,7 +6,7 @@ const cantidadInput = document.querySelector("#cantidad");
 const precioInput = document.querySelector("#precio");
 const mermaInput = document.querySelector("#merma");
 let ingredientes = [];
-
+let ingredienteEditando = null;
 
 function renderizarIngredientes() {
   tbody.innerHTML = "";
@@ -14,7 +14,7 @@ function renderizarIngredientes() {
   ingredientes.forEach(function (ingrediente) {
     const row = document.createElement("tr");
     const cantidadUtil = calcularCantidadUtil(ingrediente);
-    const costeUtil = calcularCosteUtil(ingrediente);
+    const costeUnitario = calcularCosteUnitario(ingrediente);
     row.innerHTML = `
       <td>${ingrediente.nombre}</td>
       <td>${ingrediente.unidad}</td>
@@ -22,13 +22,19 @@ function renderizarIngredientes() {
       <td>${ingrediente.precio.toFixed(2)} €</td>
       <td>${ingrediente.merma.toFixed(2)}%</td>
       <td>${cantidadUtil.toFixed(2)} ${ingrediente.unidad}</td>
-      <td>${costeUtil.toFixed(2)} €/${ingrediente.unidad}</td>
+      <td>${costeUnitario.toFixed(2)} €/${ingrediente.unidad}</td>
       <td>
-        <button 
-          class="btn-danger"
-          data-id="${ingrediente.id}"
-          type="button">
-          Eliminar
+        <button
+            class="btn-edit"
+            data-id="${ingrediente.id}"
+            type="button">
+            Editar
+        </button>
+        <button
+            class="btn-danger"
+            data-id="${ingrediente.id}"
+            type="button">
+            Eliminar
         </button>
       </td>
     `;
@@ -54,7 +60,7 @@ function calcularCantidadUtil(ingrediente) {
   return ingrediente.cantidad * (1 - ingrediente.merma / 100);
 }
 
-function calcularCosteUtil(ingrediente) {
+function calcularCosteUnitario(ingrediente) {
   const cantidadUtil = calcularCantidadUtil(ingrediente);
 
   return ingrediente.precio / cantidadUtil;
@@ -64,7 +70,7 @@ form.addEventListener("submit", function (event) {
   event.preventDefault();
 
   const ingrediente = {
-    id: Date.now(),
+    id: ingredienteEditando || Date.now(),
     nombre: nombreInput.value,
     unidad: unidadInput.value,
     cantidad: Number(cantidadInput.value),
@@ -72,8 +78,11 @@ form.addEventListener("submit", function (event) {
     merma: Number(mermaInput.value)
   };
 
-  const ingredienteDuplicado = ingredientes.find(function (ingrediente) {
-  return ingrediente.nombre.toLowerCase() === nombreInput.value.toLowerCase();
+const ingredienteDuplicado = ingredientes.find(function (ingrediente) {
+  return (
+    ingrediente.nombre.toLowerCase() === nombreInput.value.toLowerCase() &&
+    ingrediente.id !== ingredienteEditando
+  );
 });
 
 if (ingredienteDuplicado) {
@@ -81,7 +90,18 @@ if (ingredienteDuplicado) {
   return;
 }
 
-    ingredientes.push(ingrediente);
+    if (ingredienteEditando === null) {
+  ingredientes.push(ingrediente);
+} else {
+  ingredientes = ingredientes.map(function (item) {
+    if (item.id === ingredienteEditando) {
+      return ingrediente;
+    }
+    return item;
+  });
+
+  ingredienteEditando = null;
+}
     guardarIngredientes();
     renderizarIngredientes();
     form.reset();
@@ -98,6 +118,25 @@ tbody.addEventListener("click", function (event) {
 
     guardarIngredientes();
     renderizarIngredientes();
+  }
+});
+
+tbody.addEventListener("click", function (event) {
+
+  if (event.target.classList.contains("btn-edit")) {
+    
+    const id = Number(event.target.dataset.id);
+    const ingrediente = ingredientes.find(function (ingrediente) {
+      return ingrediente.id === id;
+    });
+
+    nombreInput.value = ingrediente.nombre;
+    unidadInput.value = ingrediente.unidad;
+    cantidadInput.value = ingrediente.cantidad;
+    precioInput.value = ingrediente.precio;
+    mermaInput.value = ingrediente.merma;
+
+    ingredienteEditando = id;
   }
 });
 

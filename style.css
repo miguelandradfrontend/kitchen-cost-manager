@@ -90,14 +90,21 @@ tbody tr:hover {
 }
 
 .btn-primary {
-  background-color: #4caf50;
+  background-color: #06700a;
   color: white;
   border: none;
   border-radius: 6px;
 }
 
 .btn-danger {
-  background-color: #f44336;
+  background-color: #a81208;
+  color: white;
+  border: none;
+  border-radius: 6px;
+}
+
+.btn-edit {
+  background-color: #085a9c;
   color: white;
   border: none;
   border-radius: 6px;
