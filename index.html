@@ -1,103 +1,94 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kitchen Cost Manager</title>
+  <title>Gestor de Escandallos</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-
-<header>
-  <h1>Gestor de Escandallos</h1>
+  <header>
+    <h1>Gestor de Escandallos</h1>
     <p>Calcula costes de ingredientes y gestiona precios de recetas.</p>
-</header>
+  </header>
 
 <main>
   <section class="card">
     <h2>Agregar ingrediente</h2>
 
     <form>
-    <div>
+    <div class="form-group">
       <label for="nombre">Nombre</label>
       <input id="nombre" type="text" placeholder="Ej: Carne de vacuno" required>
     </div>
-    <div>
+
+    <div class="form-group">
       <label for="unidad">Unidad de compra</label>
-    <select id="unidad" required>
+      <select id="unidad" required>
         <option value="kg">kg</option>
         <option value="g">g</option>
         <option value="l">l</option>
         <option value="ml">ml</option>
         <option value="unidad">unidad</option>
-    </select>
+      </select>
     </div>
-    <div>
+
+    <div class="form-group">
       <label for="cantidad">Cantidad comprada</label>
-      <input
-        id="cantidad"
-        type="number"
-        min="0.01"
-        step="0.01"
-        placeholder="Ej: 2.5"
-        required>
+      <input id="cantidad" type="number" min="0.01" step="0.01" placeholder="Ej: 2.5" required>
     </div>
-    <div>
+
+    <div class="form-group">
       <label for="precio">Precio de compra</label>
-      <input
-        id="precio"
-        type="number"
-        min="0"
-        step="0.01"
-        placeholder="Ej: 15.99"
-        required>
+      <input id="precio" type="number" min="0" step="0.01" placeholder="Ej: 15.99" required>
     </div>
-    <div>
+
+    <div class="form-group">
       <label for="merma">Merma (%)</label>
-        <input
-        id="merma"
-        type="number"
-        min="0"
-        max="100"
-        step="0.01"
-        placeholder="Ej: 10">
+        <input id="merma" type="number" min="0" max="100" step="0.01" placeholder="Ej: 10">
     </div>
+
     <div class="form-actions">
         <button class="btn-primary" type="submit">+ Agregar ingrediente</button>
         <button class="btn-secondary" type="button">Limpiar formulario</button>
     </div>
     </form>
   </section>
-<section class="card">
+
+  <section class="card">
     <h2>Ingredientes</h2>
+
   <div class="table-container">
     <table>
-    <thead>
-    <tr>
-      <th>Nombre</th>
-      <th>Unidad</th>
-      <th>Cantidad</th>
-      <th>Precio</th>
-      <th>Merma</th>
-      <th>Cantidad útil</th>
-      <th>Coste unitario</th>
-      <th>Coste base</th>
-      <th>Acción</th>
-    </tr>
-    </thead>
-  <tbody id="ingredientes-body">  </tbody>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Unidad</th>
+          <th>Cantidad</th>
+          <th>Precio</th>
+          <th>Merma</th>
+          <th>Cantidad útil</th>
+          <th>Coste unitario</th>
+          <th>Coste base</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+
+      <tbody id="ingredientes-body">  </tbody>
     </table>
-    <div class="info-box">
-  <p><strong>Merma:</strong> porcentaje de producto que se pierde al limpiar, cocinar o preparar.</p>
-  <p><strong>Cantidad útil:</strong> cantidad real disponible después de aplicar la merma.</p>
-  <p><strong>Coste unitario:</strong> coste por unidad original según la unidad indicada.</p>
-  <p><strong>Coste base:</strong> coste normalizado por gramo en sólidos o mililitro en líquidos.</p>
-</div>
+  </div>
+
+  <div class="info-box">
+    <p><strong>Merma:</strong> porcentaje de producto que se pierde al limpiar, cocinar o preparar.</p>
+    <p><strong>Cantidad útil:</strong> cantidad real disponible después de aplicar la merma.</p>
+    <p><strong>Coste unitario:</strong> coste por unidad original según la unidad indicada.</p>
+    <p><strong>Coste base:</strong> coste normalizado por gramo en sólidos o mililitro en líquidos.</p>
   </div>
   </section>
 </main>
-<script src="script.js"></script>
+
+  <script src="script.js"></script>
 </body>
 </html>
