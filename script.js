@@ -1,12 +1,76 @@
+/* =========================
+   1. Selectors
+========================= */
+
 const tbody = document.querySelector("#ingredientes-body");
 const form = document.querySelector("form");
+
 const nombreInput = document.querySelector("#nombre");
 const unidadInput = document.querySelector("#unidad");
 const cantidadInput = document.querySelector("#cantidad");
 const precioInput = document.querySelector("#precio");
 const mermaInput = document.querySelector("#merma");
+
+/* =========================
+   2. State
+========================= */
+
 let ingredientes = [];
 let ingredienteEditando = null;
+
+/* =========================
+   3. Business Logic
+========================= */
+
+function calcularCantidadUtil(ingrediente) {
+  return ingrediente.cantidad * (1 - ingrediente.merma / 100);
+}
+
+function calcularCosteUnitario(ingrediente) {
+  const cantidadUtil = calcularCantidadUtil(ingrediente);
+
+  return ingrediente.precio / cantidadUtil;
+}
+
+function calcularCosteBase(ingrediente) {
+  const cantidadBase = convertirUnidadBase(ingrediente);
+
+  return ingrediente.precio / cantidadBase;
+}
+
+function convertirUnidadBase(ingrediente) {
+  if (ingrediente.unidad === "kg") {
+    return ingrediente.cantidad * 1000;
+  }
+
+  if (ingrediente.unidad === "l") {
+    return ingrediente.cantidad * 1000;
+  }
+
+  return ingrediente.cantidad;
+}
+
+/* =========================
+   4. Storage
+========================= */
+
+function guardarIngredientes() {
+  localStorage.setItem("ingredientes", JSON.stringify(ingredientes));
+}
+
+function cargarIngredientes() {
+  const ingredientesGuardados = localStorage.getItem("ingredientes");
+
+  if (ingredientesGuardados) {
+    ingredientes = JSON.parse(ingredientesGuardados);
+
+    renderizarIngredientes();
+  }
+}
+
+/* =========================
+   5. Render
+========================= */
 
 function renderizarIngredientes() {
   tbody.innerHTML = "";
@@ -25,6 +89,7 @@ function renderizarIngredientes() {
       <td>${cantidadUtil.toFixed(2)} ${ingrediente.unidad}</td>
       <td>${costeUnitario.toFixed(2)} €/${ingrediente.unidad}</td>
       <td>${costeBase.toFixed(2)} €/base</td>
+      <td>
         <button class="btn-edit" data-id="${ingrediente.id}" type="button">  ✏️ Editar</button>
         <button class="btn-danger" data-id="${ingrediente.id}" type="button">  🗑️ Eliminar</button>
       </td>
@@ -34,28 +99,9 @@ function renderizarIngredientes() {
   });
 }
 
-function guardarIngredientes() {
-  localStorage.setItem("ingredientes", JSON.stringify(ingredientes));
-}
-
-function cargarIngredientes() {
-  const ingredientesGuardados = localStorage.getItem("ingredientes");
-
-  if (ingredientesGuardados) {
-    ingredientes = JSON.parse(ingredientesGuardados);
-    renderizarIngredientes();
-  }
-}
-
-function calcularCantidadUtil(ingrediente) {
-  return ingrediente.cantidad * (1 - ingrediente.merma / 100);
-}
-
-function calcularCosteUnitario(ingrediente) {
-  const cantidadUtil = calcularCantidadUtil(ingrediente);
-
-  return ingrediente.precio / cantidadUtil;
-}
+/* =========================
+   6. Events
+========================= */
 
 form.addEventListener("submit", function (event) {
   event.preventDefault();
@@ -69,12 +115,12 @@ form.addEventListener("submit", function (event) {
     merma: Number(mermaInput.value)
   };
 
-const ingredienteDuplicado = ingredientes.find(function (ingrediente) {
-  return (
-    ingrediente.nombre.toLowerCase() === nombreInput.value.toLowerCase() &&
-    ingrediente.id !== ingredienteEditando
-  );
-});
+  const ingredienteDuplicado = ingredientes.find(function (ingrediente) {
+    return (
+      ingrediente.nombre.toLowerCase() === nombreInput.value.toLowerCase() &&
+      ingrediente.id !== ingredienteEditando
+    );
+  });
 
 if (ingredienteDuplicado) {
   alert("Este ingrediente ya existe.");
@@ -130,23 +176,10 @@ tbody.addEventListener("click", function (event) {
     ingredienteEditando = id;
   }
 });
-function convertirUnidadBase(ingrediente) {
-if (ingrediente.unidad === "kg") {
-    return ingrediente.cantidad * 1000;
-  }
 
-  if (ingrediente.unidad === "l") {
-    return ingrediente.cantidad * 1000;
-  }
+/* =========================
+   7. Init
+========================= */
 
-  return ingrediente.cantidad;
-}
-
-function calcularCosteBase(ingrediente) {
-
-  const cantidadBase = convertirUnidadBase(ingrediente);
-
-  return ingrediente.precio / cantidadBase;
-}
 cargarIngredientes();
 
