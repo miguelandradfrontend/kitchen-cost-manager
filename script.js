@@ -10,6 +10,12 @@ const unidadInput = document.querySelector("#unidad");
 const cantidadInput = document.querySelector("#cantidad");
 const precioInput = document.querySelector("#precio");
 const mermaInput = document.querySelector("#merma");
+const alergenosInputs = document.querySelectorAll(
+  '.allergens-grid input[type="checkbox"]'
+);
+const alergenosSection = document.querySelector(".allergens-section");
+const limpiarFormularioBtn = document.querySelector("#limpiar-formulario");
+const alergenosSummary = document.querySelector(".allergens-section summary");
 
 /* =========================
    2. State
@@ -48,6 +54,14 @@ function convertirUnidadBase(ingrediente) {
   }
 
   return ingrediente.cantidad;
+}
+
+function actualizarContadorAlergenos() {
+  const totalSeleccionados = [...alergenosInputs].filter(function (checkbox) {
+    return checkbox.checked;
+  }).length;
+
+  alergenosSummary.textContent = `Alérgenos (${totalSeleccionados})`;
 }
 
 /* =========================
@@ -92,6 +106,15 @@ function renderizarIngredientes() {
       <td>
         <button class="btn-edit" data-id="${ingrediente.id}" type="button">  ✏️ Editar</button>
         <button class="btn-danger" data-id="${ingrediente.id}" type="button">  🗑️ Eliminar</button>
+        ${ingrediente.alergenos?.length
+          ? `<span
+              class="allergen-badge"
+              title="${ingrediente.alergenos.join(", ")}"
+            >
+              ⚠️ ${ingrediente.alergenos.length}
+            </span>`
+          : ""
+        }
       </td>
     `;
     
@@ -106,13 +129,22 @@ function renderizarIngredientes() {
 form.addEventListener("submit", function (event) {
   event.preventDefault();
 
+const alergenosSeleccionados = [...alergenosInputs]
+  .filter(function (checkbox) {
+    return checkbox.checked;
+  })
+  .map(function (checkbox) {
+    return checkbox.value;
+  });
+
   const ingrediente = {
     id: ingredienteEditando || Date.now(),
     nombre: nombreInput.value,
     unidad: unidadInput.value,
     cantidad: Number(cantidadInput.value),
     precio: Number(precioInput.value),
-    merma: Number(mermaInput.value)
+    merma: Number(mermaInput.value),
+    alergenos: alergenosSeleccionados
   };
 
   const ingredienteDuplicado = ingredientes.find(function (ingrediente) {
@@ -142,7 +174,8 @@ if (ingredienteDuplicado) {
     guardarIngredientes();
     renderizarIngredientes();
     form.reset();
-//  console.table(ingredientes);
+    alergenosSection.open = false;
+    actualizarContadorAlergenos();
 });
 
 tbody.addEventListener("click", function (event) {
@@ -154,6 +187,7 @@ tbody.addEventListener("click", function (event) {
     });
 
     guardarIngredientes();
+    console.log(ingredientes);
     renderizarIngredientes();
   }
 });
@@ -173,10 +207,26 @@ tbody.addEventListener("click", function (event) {
     precioInput.value = ingrediente.precio;
     mermaInput.value = ingrediente.merma;
 
+    alergenosInputs.forEach(function (checkbox) {
+      checkbox.checked = ingrediente.alergenos?.includes(checkbox.value) || false;
+    });
+
+    actualizarContadorAlergenos();
+
     ingredienteEditando = id;
   }
 });
 
+limpiarFormularioBtn.addEventListener("click", function () {
+  form.reset();
+  ingredienteEditando = null;
+  alergenosSection.open = false;
+  actualizarContadorAlergenos();
+});
+
+alergenosInputs.forEach(function (checkbox) {
+  checkbox.addEventListener("change", actualizarContadorAlergenos);
+});
 /* =========================
    7. Init
 ========================= */

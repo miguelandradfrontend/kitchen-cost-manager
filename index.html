@@ -50,9 +50,30 @@
         <input id="merma" type="number" min="0" max="100" step="0.01" placeholder="Ej: 10">
     </div>
 
+<details class="allergens-section">
+  <summary>Alérgenos</summary>
+
+    <div class="allergens-grid">
+      <label><input type="checkbox" value="Gluten"> Gluten</label>
+      <label><input type="checkbox" value="Crustáceos"> Crustáceos</label>
+      <label><input type="checkbox" value="Huevos"> Huevos</label>
+      <label><input type="checkbox" value="Pescado"> Pescado</label>
+      <label><input type="checkbox" value="Cacahuetes"> Cacahuetes</label>
+      <label><input type="checkbox" value="Soja"> Soja</label>
+      <label><input type="checkbox" value="Leche"> Leche</label>
+      <label><input type="checkbox" value="Frutos de cáscara"> Frutos de cáscara</label>
+      <label><input type="checkbox" value="Apio"> Apio</label>
+      <label><input type="checkbox" value="Mostaza"> Mostaza</label>
+      <label><input type="checkbox" value="Sésamo"> Sésamo</label>
+      <label><input type="checkbox" value="Sulfitos"> Sulfitos</label>
+      <label><input type="checkbox" value="Altramuces"> Altramuces</label>
+      <label><input type="checkbox" value="Moluscos"> Moluscos</label>
+    </div>
+</details>
+
     <div class="form-actions">
         <button class="btn-primary" type="submit">+ Agregar ingrediente</button>
-        <button class="btn-secondary" type="button">Limpiar formulario</button>
+        <button id="limpiar-formulario" class="btn-secondary" type="button">Limpiar formulario</button>
     </div>
     </form>
   </section>
