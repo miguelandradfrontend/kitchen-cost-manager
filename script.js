@@ -17,12 +17,32 @@ const alergenosSection = document.querySelector(".allergens-section");
 const limpiarFormularioBtn = document.querySelector("#limpiar-formulario");
 const alergenosSummary = document.querySelector(".allergens-section summary");
 
+const recetasBody = document.querySelector("#recetas-body");
+const recetaForm = document.querySelector("#receta-form");
+
+const recetaNombreInput = document.querySelector("#receta-nombre");
+const recetaCategoriaInput = document.querySelector("#receta-categoria");
+const recetaRendimientoCantidadInput = document.querySelector(
+  "#receta-rendimiento-cantidad"
+);
+const recetaRendimientoUnidadInput = document.querySelector(
+  "#receta-rendimiento-unidad"
+);
+const recetaRacionesInput = document.querySelector("#receta-raciones");
+const recetaPrecioVentaInput = document.querySelector(
+  "#receta-precio-venta"
+);
+const limpiarRecetaFormularioBtn = document.querySelector(
+  "#limpiar-receta-formulario"
+);
 /* =========================
    2. State
 ========================= */
 
 let ingredientes = [];
 let ingredienteEditando = null;
+let recetas = [];
+let recetaEditando = null;
 
 /* =========================
    3. Business Logic
@@ -82,6 +102,19 @@ function cargarIngredientes() {
   }
 }
 
+function guardarRecetas() {
+  localStorage.setItem("recetas", JSON.stringify(recetas));
+}
+
+function cargarRecetas() {
+  const recetasGuardadas = localStorage.getItem("recetas");
+
+  if (recetasGuardadas) {
+    recetas = JSON.parse(recetasGuardadas);
+    renderizarRecetas();
+  }
+}
+
 /* =========================
    5. Render
 ========================= */
@@ -122,6 +155,35 @@ function renderizarIngredientes() {
   });
 }
 
+function renderizarRecetas() {
+  recetasBody.innerHTML = "";
+
+  recetas.forEach(function (receta) {
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td>${receta.nombre}</td>
+      <td>${receta.categoria}</td>
+      <td>
+        ${receta.rendimientoCantidad}
+        ${receta.rendimientoUnidad}
+      </td>
+      <td>${receta.raciones}</td>
+      <td>${receta.precioVenta.toFixed(2)} €</td>
+      <td>
+        <button class="btn-edit-receta" data-id="${receta.id}" type="button">
+          ✏️ Editar
+        </button>
+
+        <button class="btn-danger-receta" data-id="${receta.id}" type="button">
+          🗑️ Eliminar
+        </button>
+      </td>
+    `;
+
+    recetasBody.appendChild(row);
+  });
+}
 /* =========================
    6. Events
 ========================= */
@@ -212,7 +274,6 @@ tbody.addEventListener("click", function (event) {
     });
 
     actualizarContadorAlergenos();
-
     ingredienteEditando = id;
   }
 });
@@ -227,9 +288,88 @@ limpiarFormularioBtn.addEventListener("click", function () {
 alergenosInputs.forEach(function (checkbox) {
   checkbox.addEventListener("change", actualizarContadorAlergenos);
 });
+
+recetaForm.addEventListener("submit", function (event) {
+  event.preventDefault();
+
+  const receta = {
+    id: recetaEditando || Date.now(),
+    nombre: recetaNombreInput.value,
+    categoria: recetaCategoriaInput.value,
+    rendimientoCantidad: Number(recetaRendimientoCantidadInput.value),
+    rendimientoUnidad: recetaRendimientoUnidadInput.value,
+    raciones: Number(recetaRacionesInput.value),
+    precioVenta: Number(recetaPrecioVentaInput.value),
+    componentes: []
+  };
+const recetaDuplicada = recetas.find(function (receta) {
+  return (
+    receta.nombre.toLowerCase() === recetaNombreInput.value.toLowerCase() &&
+    receta.id !== recetaEditando
+  );
+});
+
+if (recetaDuplicada) {
+  alert("Esta receta ya existe.");
+  return;
+}
+  if (recetaEditando === null) {
+    recetas.push(receta);
+  } else {
+    recetas = recetas.map(function (item) {
+      if (item.id === recetaEditando) {
+        return receta;
+      }
+      return item;
+    });
+
+  recetaEditando = null;
+}
+
+guardarRecetas();
+renderizarRecetas();
+recetaForm.reset();
+});
+
+recetasBody.addEventListener("click", function (event) {
+  if (event.target.classList.contains("btn-danger-receta")) {
+    const id = Number(event.target.dataset.id);
+
+    recetas = recetas.filter(function (receta) {
+      return receta.id !== id;
+    });
+
+    guardarRecetas();
+    renderizarRecetas();
+  }
+});
+
+recetasBody.addEventListener("click", function (event) {
+  if (event.target.classList.contains("btn-edit-receta")) {
+    const id = Number(event.target.dataset.id);
+
+    const receta = recetas.find(function (receta) {
+      return receta.id === id;
+    });
+
+    recetaNombreInput.value = receta.nombre;
+    recetaCategoriaInput.value = receta.categoria;
+    recetaRendimientoCantidadInput.value = receta.rendimientoCantidad;
+    recetaRendimientoUnidadInput.value = receta.rendimientoUnidad;
+    recetaRacionesInput.value = receta.raciones;
+    recetaPrecioVentaInput.value = receta.precioVenta;
+
+    recetaEditando = id;
+  }
+});
+
+limpiarRecetaFormularioBtn.addEventListener("click", function () {
+  recetaForm.reset();
+  recetaEditando = null;
+});
 /* =========================
    7. Init
 ========================= */
 
 cargarIngredientes();
-
+cargarRecetas();

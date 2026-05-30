@@ -271,7 +271,21 @@ td:last-child {
   color: #856404;
 }
 /* =========================
-   10. Responsive
+   10. Recetas
+========================= */
+
+.recipe-form {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.recipe-form .form-actions {
+  grid-column: 1 / -1;
+}
+
+/* =========================
+   11. Responsive
 ========================= */
 
 @media (max-width: 768px) {
