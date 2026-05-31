@@ -35,6 +35,13 @@ const recetaPrecioVentaInput = document.querySelector(
 const limpiarRecetaFormularioBtn = document.querySelector(
   "#limpiar-receta-formulario"
 );
+
+const componenteForm = document.querySelector("#componente-form");
+const componenteItemInput = document.querySelector("#componente-item");
+const componenteCantidadInput = document.querySelector("#componente-cantidad");
+const componenteUnidadInput = document.querySelector("#componente-unidad");
+const componentesBody = document.querySelector("#componentes-body");
+const componentesCard = document.querySelector("#componentes-card");
 /* =========================
    2. State
 ========================= */
@@ -43,6 +50,7 @@ let ingredientes = [];
 let ingredienteEditando = null;
 let recetas = [];
 let recetaEditando = null;
+let recetaSeleccionada = null;
 
 /* =========================
    3. Business Logic
@@ -59,9 +67,80 @@ function calcularCosteUnitario(ingrediente) {
 }
 
 function calcularCosteBase(ingrediente) {
-  const cantidadBase = convertirUnidadBase(ingrediente);
+  let cantidadBase = convertirUnidadBase(ingrediente);
+
+  cantidadBase = cantidadBase * (1 - ingrediente.merma / 100);
 
   return ingrediente.precio / cantidadBase;
+}
+function calcularCosteComponente(componente) {
+  if (componente.tipo === "ingrediente") {
+    const ingrediente = ingredientes.find(function (ingrediente) {
+      return ingrediente.id === componente.itemId;
+    });
+
+    if (!ingrediente) {
+      return 0;
+    }
+
+    const costeBase = calcularCosteBase(ingrediente);
+
+    let cantidadBase = componente.cantidad;
+
+    if (componente.unidad === "kg") {
+      cantidadBase *= 1000;
+    }
+
+    if (componente.unidad === "l") {
+      cantidadBase *= 1000;
+    }
+
+    return costeBase * cantidadBase;
+  }
+
+  if (componente.tipo === "receta") {
+    const receta = recetas.find(function (receta) {
+      return receta.id === componente.itemId;
+    });
+
+    if (!receta) {
+      return 0;
+    }
+
+    const costeTotalReceta = calcularCosteTotalReceta(receta);
+
+    let rendimientoBase = receta.rendimientoCantidad;
+
+    if (receta.rendimientoUnidad === "kg") {
+      rendimientoBase *= 1000;
+    }
+
+    if (receta.rendimientoUnidad === "l") {
+      rendimientoBase *= 1000;
+    }
+
+    let cantidadUsadaBase = componente.cantidad;
+
+    if (componente.unidad === "kg") {
+      cantidadUsadaBase *= 1000;
+    }
+
+    if (componente.unidad === "l") {
+      cantidadUsadaBase *= 1000;
+    }
+
+    const costePorUnidadBase = costeTotalReceta / rendimientoBase;
+
+    return costePorUnidadBase * cantidadUsadaBase;
+  }
+
+  return 0;
+}
+
+function calcularCosteTotalReceta(receta) {
+  return receta.componentes.reduce(function (total, componente) {
+    return total + calcularCosteComponente(componente);
+  }, 0);
 }
 
 function convertirUnidadBase(ingrediente) {
@@ -82,6 +161,24 @@ function actualizarContadorAlergenos() {
   }).length;
 
   alergenosSummary.textContent = `Alérgenos (${totalSeleccionados})`;
+}
+
+function obtenerNombreComponente(componente) {
+  if (componente.tipo === "ingrediente") {
+    const ingrediente = ingredientes.find(function (ingrediente) {
+      return ingrediente.id === componente.itemId;
+    });
+
+    return ingrediente ? ingrediente.nombre : "Ingrediente no encontrado";
+  }
+
+  if (componente.tipo === "receta") {
+    const receta = recetas.find(function (receta) {
+      return receta.id === componente.itemId;
+    });
+
+    return receta ? receta.nombre : "Receta no encontrada";
+  }
 }
 
 /* =========================
@@ -178,12 +275,81 @@ function renderizarRecetas() {
         <button class="btn-danger-receta" data-id="${receta.id}" type="button">
           🗑️ Eliminar
         </button>
+
+        <button class="btn-componentes" data-id="${receta.id}" type="button">
+          🧩 Componentes
+        </button>
       </td>
     `;
 
     recetasBody.appendChild(row);
   });
 }
+
+function cargarOpcionesComponentes() {
+  console.log("Cargando opciones...");
+console.log("Ingredientes:", ingredientes);
+console.log("Recetas:", recetas);
+console.log("Receta seleccionada:", recetaSeleccionada);
+  componenteItemInput.innerHTML = `
+    <option value="">Selecciona un elemento</option>
+  `;
+
+  ingredientes.forEach(function (ingrediente) {
+    const option = document.createElement("option");
+
+    option.value = `ingrediente-${ingrediente.id}`;
+    option.textContent = `${ingrediente.nombre} (Ingrediente)`;
+
+    componenteItemInput.appendChild(option);
+  });
+
+  recetas.forEach(function (receta) {
+    if (recetaSeleccionada && receta.id === recetaSeleccionada.id) {
+      return;
+    }
+
+    const option = document.createElement("option");
+
+    option.value = `receta-${receta.id}`;
+    option.textContent = `${receta.nombre} (Receta)`;
+
+    componenteItemInput.appendChild(option);
+  });
+}
+
+function renderizarComponentes() {
+  componentesBody.innerHTML = "";
+
+  if (!recetaSeleccionada) {
+    return;
+  }
+
+  recetaSeleccionada.componentes.forEach(function (componente, index) {
+    const row = document.createElement("tr");
+    const nombreComponente = obtenerNombreComponente(componente);
+    const coste = calcularCosteComponente(componente);
+
+    row.innerHTML = `
+      <td>${nombreComponente}</td>
+      <td>${componente.cantidad}</td>
+      <td>${componente.unidad}</td>
+      <td>${coste.toFixed(2)} €</td>
+      <td>
+        <button
+          class="btn-danger btn-eliminar-componente"
+          data-index="${index}"
+          type="button"
+        >
+          🗑️ Eliminar
+        </button>
+      </td>
+    `;
+
+    componentesBody.appendChild(row);
+  });
+}
+
 /* =========================
    6. Events
 ========================= */
@@ -367,6 +533,76 @@ limpiarRecetaFormularioBtn.addEventListener("click", function () {
   recetaForm.reset();
   recetaEditando = null;
 });
+
+recetasBody.addEventListener("click", function (event) {
+  if (event.target.classList.contains("btn-componentes")) {
+    const id = Number(event.target.dataset.id);
+
+    recetaSeleccionada = recetas.find(function (receta) {
+      return receta.id === id;
+    });
+
+    document.querySelector("#receta-activa").innerHTML = `
+      <p><strong>Receta seleccionada:</strong> ${recetaSeleccionada.nombre}</p>
+    `;
+
+    componentesCard.style.display = "block";
+    cargarOpcionesComponentes();
+    renderizarComponentes();
+  }
+});
+
+componenteForm.addEventListener("submit", function (event) {
+  event.preventDefault();
+
+  if (!recetaSeleccionada) {
+    alert("Selecciona una receta primero.");
+    return;
+  }
+
+  const [tipo, itemId] = componenteItemInput.value.split("-");
+
+  const componente = {
+    tipo: tipo,
+    itemId: Number(itemId),
+    cantidad: Number(componenteCantidadInput.value),
+    unidad: componenteUnidadInput.value
+  };
+
+  recetaSeleccionada.componentes.push(componente);
+
+  recetas = recetas.map(function (receta) {
+    if (receta.id === recetaSeleccionada.id) {
+      return recetaSeleccionada;
+    }
+
+    return receta;
+  });
+
+  guardarRecetas();
+  renderizarComponentes();
+  componenteForm.reset();
+});
+
+componentesBody.addEventListener("click", function (event) {
+  if (event.target.classList.contains("btn-eliminar-componente")) {
+    const index = Number(event.target.dataset.index);
+
+    recetaSeleccionada.componentes.splice(index, 1);
+
+    recetas = recetas.map(function (receta) {
+      if (receta.id === recetaSeleccionada.id) {
+        return recetaSeleccionada;
+      }
+
+      return receta;
+    });
+
+    guardarRecetas();
+    renderizarComponentes();
+  }
+});
+
 /* =========================
    7. Init
 ========================= */
