@@ -257,8 +257,19 @@ function renderizarRecetas() {
 
   recetas.forEach(function (receta) {
     const row = document.createElement("tr");
-
-    row.innerHTML = `
+    const costeTotal = calcularCosteTotalReceta(receta);
+    const costePorRacion = receta.raciones > 0 ? costeTotal / receta.raciones : 0;
+    const foodCost = receta.precioVenta > 0
+      ? (costePorRacion / receta.precioVenta) * 100
+      : 0;
+    const foodCostClass =
+      foodCost < 25
+        ? "food-cost-good"
+        : foodCost <= 35
+        ? "food-cost-warning"
+        : "food-cost-danger";
+      
+        row.innerHTML = `
       <td>${receta.nombre}</td>
       <td>${receta.categoria}</td>
       <td>
@@ -267,6 +278,11 @@ function renderizarRecetas() {
       </td>
       <td>${receta.raciones}</td>
       <td>${receta.precioVenta.toFixed(2)} €</td>
+      <td>${costeTotal.toFixed(2)} €</td>
+      <td>${costePorRacion.toFixed(2)} €</td>
+      <td class="${foodCostClass}">
+        ${foodCost.toFixed(1)}%
+      </td>
       <td>
         <button class="btn-edit-receta" data-id="${receta.id}" type="button">
           ✏️ Editar
@@ -281,16 +297,11 @@ function renderizarRecetas() {
         </button>
       </td>
     `;
-
     recetasBody.appendChild(row);
   });
 }
 
 function cargarOpcionesComponentes() {
-  console.log("Cargando opciones...");
-console.log("Ingredientes:", ingredientes);
-console.log("Recetas:", recetas);
-console.log("Receta seleccionada:", recetaSeleccionada);
   componenteItemInput.innerHTML = `
     <option value="">Selecciona un elemento</option>
   `;
@@ -348,6 +359,25 @@ function renderizarComponentes() {
 
     componentesBody.appendChild(row);
   });
+
+  const costeTotalComponentes = recetaSeleccionada.componentes.reduce(
+  function (total, componente) {
+    return total + calcularCosteComponente(componente);
+  },
+  0
+);
+
+const totalRow = document.createElement("tr");
+
+totalRow.classList.add("total-row");
+
+totalRow.innerHTML = `
+  <td colspan="3"><strong>Coste total</strong></td>
+  <td><strong>${costeTotalComponentes.toFixed(2)} €</strong></td>
+  <td></td>
+`;
+
+componentesBody.appendChild(totalRow);
 }
 
 /* =========================
