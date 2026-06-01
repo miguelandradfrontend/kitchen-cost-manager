@@ -50,6 +50,16 @@
         <input id="merma" type="number" min="0" max="100" step="0.01" placeholder="Ej: 10">
     </div>
 
+    <div class="form-group">
+      <label for="stock-actual">Stock actual</label>
+        <input id="stock-actual" type="number" min="0" step="0.01" placeholder="Ej: 5">
+    </div>
+
+    <div class="form-group">
+      <label for="stock-minimo">Stock mínimo</label>
+        <input id="stock-minimo" type="number" min="0" step="0.01" placeholder="Ej: 1">
+    </div>
+
 <details class="allergens-section">
   <summary>Alérgenos</summary>
 
@@ -81,8 +91,29 @@
   <section class="card">
     <h2>Ingredientes</h2>
 
-<details class="collapsible-table">
-  <summary>Ver/Ocultar tabla de ingredientes</summary>
+  <div id="stock-summary" class="stock-summary">
+    <span>🔴 Sin stock: 0</span>
+    <span>🟡 Bajo stock: 0</span>
+    <span>🟢 Stock OK: 0</span>
+  </div>
+
+<div class="table-toolbar">
+  <details class="collapsible-table">
+    <summary>Ver/Ocultar tabla de ingredientes</summary>
+
+    <div class="table-container">
+      <!-- tabla ingredientes -->
+    </div>
+  </details>
+
+  <div class="search-container">
+    <input
+      id="buscar-ingrediente"
+      type="text"
+      placeholder="🔍 Buscar ingrediente..."
+    >
+  </div>
+</div>
 
   <div class="table-container">
     <table>
@@ -96,6 +127,9 @@
           <th>Cantidad útil</th>
           <th>Coste unitario</th>
           <th>Coste base</th>
+          <th>Stock actual</th>
+          <th>Stock mínimo</th>
+          <th>Estado stock</th>
           <th>Acción</th>
         </tr>
       </thead>
@@ -179,9 +213,23 @@
   </div>
 </form>
 
+<div class="table-toolbar">
+  <details class="collapsible-table">
+    <summary>Ver/Ocultar recetas</summary>
 
-<details class="collapsible-table">
-  <summary>Ver/Ocultar recetas</summary>
+    <div class="table-container">
+      <!-- tabla recetas -->
+    </div>
+  </details>
+
+  <div class="search-container">
+    <input
+      id="buscar-receta"
+      type="text"
+      placeholder="🔍 Buscar receta..."
+    >
+  </div>
+</div>
 
   <div class="table-container">
     <table class="recipes-table">

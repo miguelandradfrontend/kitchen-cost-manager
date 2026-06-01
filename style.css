@@ -111,6 +111,18 @@ select {
   flex: 1;
 }
 
+.search-container {
+  position: absolute;
+  top: -4px;
+  right: 0;
+}
+
+.search-container input {
+  width: 240px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}
+
 /* =========================
    6. Buttons
 ========================= */
@@ -265,6 +277,15 @@ td:last-child {
   font-weight: 700;
   cursor: pointer;
   user-select: none;
+}
+
+.table-toolbar {
+  position: relative;
+  margin-top: 20px;
+}
+
+.table-toolbar .collapsible-table {
+  margin-top: 0;
 }
 
 /* =========================
@@ -437,9 +458,27 @@ td:last-child {
   font-weight: 700;
 }
 /* =========================
-   12. Responsive
+   12. Inventario
 ========================= */
 
+.stock-good {
+  color: #198754;
+  font-weight: 700;
+}
+
+.stock-warning {
+  color: #b8860b;
+  font-weight: 700;
+}
+
+.stock-danger {
+  color: #dc3545;
+  font-weight: 700;
+}
+
+/* =========================
+   13. Responsive
+========================= */
 @media (max-width: 768px) {
 
   form {
@@ -468,5 +507,14 @@ td:last-child {
   #receta-form .form-actions {
     grid-column: 1 / -1;
     flex-direction: column;
+  }
+
+  .search-container {
+  position: static;
+  margin-top: 10px;
+  }
+
+  .search-container input {
+  width: 100%;
   }
 }

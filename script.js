@@ -10,6 +10,8 @@ const unidadInput = document.querySelector("#unidad");
 const cantidadInput = document.querySelector("#cantidad");
 const precioInput = document.querySelector("#precio");
 const mermaInput = document.querySelector("#merma");
+const stockActualInput = document.querySelector("#stock-actual");
+const stockMinimoInput = document.querySelector("#stock-minimo");
 const alergenosInputs = document.querySelectorAll(
   '.allergens-grid input[type="checkbox"]'
 );
@@ -42,6 +44,13 @@ const componenteCantidadInput = document.querySelector("#componente-cantidad");
 const componenteUnidadInput = document.querySelector("#componente-unidad");
 const componentesBody = document.querySelector("#componentes-body");
 const componentesCard = document.querySelector("#componentes-card");
+const stockSummary = document.querySelector("#stock-summary");
+const buscarIngredienteInput =
+  document.querySelector("#buscar-ingrediente");
+
+const buscarRecetaInput =
+  document.querySelector("#buscar-receta");
+
 /* =========================
    2. State
 ========================= */
@@ -51,6 +60,8 @@ let ingredienteEditando = null;
 let recetas = [];
 let recetaEditando = null;
 let recetaSeleccionada = null;
+let filtroIngrediente = "";
+let filtroReceta = "";
 
 /* =========================
    3. Business Logic
@@ -255,6 +266,27 @@ function obtenerAlergenosComponente(componente) {
   return [];
 }
 
+function obtenerEstadoStock(ingrediente) {
+  if (ingrediente.stockActual <= 0) {
+    return {
+      texto: "Sin stock",
+      clase: "stock-danger"
+    };
+  }
+
+  if (ingrediente.stockActual <= ingrediente.stockMinimo) {
+    return {
+      texto: "Bajo stock",
+      clase: "stock-warning"
+    };
+  }
+
+  return {
+    texto: "Stock OK",
+    clase: "stock-good"
+  };
+}
+
 /* =========================
    4. Storage
 ========================= */
@@ -269,6 +301,15 @@ function cargarIngredientes() {
   if (ingredientesGuardados) {
     ingredientes = JSON.parse(ingredientesGuardados);
 
+    ingredientes = ingredientes.map(function (ingrediente) {
+      return {
+        ...ingrediente,
+        stockActual: ingrediente.stockActual ?? 0,
+        stockMinimo: ingrediente.stockMinimo ?? 0
+      };
+    });
+
+    guardarIngredientes();
     renderizarIngredientes();
   }
 }
@@ -290,23 +331,77 @@ function cargarRecetas() {
    5. Render
 ========================= */
 
+function renderizarResumenStock() {
+  const sinStock = ingredientes.filter(function (ingrediente) {
+    return ingrediente.stockActual <= 0;
+  }).length;
+
+  const bajoStock = ingredientes.filter(function (ingrediente) {
+    return ingrediente.stockActual > 0 && ingrediente.stockActual <= ingrediente.stockMinimo;
+  }).length;
+
+  const stockOk = ingredientes.filter(function (ingrediente) {
+    return ingrediente.stockActual > ingrediente.stockMinimo;
+  }).length;
+
+  stockSummary.innerHTML = `
+    <span>🔴 Sin stock: ${sinStock}</span>
+    <span>🟡 Bajo stock: ${bajoStock}</span>
+    <span>🟢 Stock OK: ${stockOk}</span>
+  `;
+}
+
 function renderizarIngredientes() {
   tbody.innerHTML = "";
+  renderizarResumenStock();
 
-  ingredientes.forEach(function (ingrediente) {
+const ingredientesOrdenados = [...ingredientes].sort(function (a, b) {
+
+  const prioridadA =
+    a.stockActual <= 0
+      ? 0
+      : a.stockActual <= a.stockMinimo
+      ? 1
+      : 2;
+
+  const prioridadB =
+    b.stockActual <= 0
+      ? 0
+      : b.stockActual <= b.stockMinimo
+      ? 1
+      : 2;
+
+  return prioridadA - prioridadB;
+});
+
+const ingredientesFiltrados =
+  ingredientesOrdenados.filter(function (ingrediente) {
+    return ingrediente.nombre
+      .toLowerCase()
+      .includes(filtroIngrediente);
+  });
+
+ingredientesFiltrados.forEach(function (ingrediente) {
     const row = document.createElement("tr");
     const cantidadUtil = calcularCantidadUtil(ingrediente);
     const costeUnitario = calcularCosteUnitario(ingrediente);
     const costeBase = calcularCosteBase(ingrediente);
+    const estadoStock = obtenerEstadoStock(ingrediente);
     row.innerHTML = `
       <td>${ingrediente.nombre}</td>
       <td>${ingrediente.unidad}</td>
       <td>${ingrediente.cantidad}</td>
       <td>${ingrediente.precio.toFixed(2)} €</td>
       <td>${ingrediente.merma.toFixed(2)}%</td>
+      
       <td>${cantidadUtil.toFixed(2)} ${ingrediente.unidad}</td>
       <td>${costeUnitario.toFixed(2)} €/${ingrediente.unidad}</td>
       <td>${costeBase.toFixed(2)} €/base</td>
+      <td>${ingrediente.stockActual}</td>
+      <td>${ingrediente.stockMinimo}</td>
+      <td class="${estadoStock.clase}">
+          ${estadoStock.texto}
+      </td>
       <td>
         <button class="btn-edit" data-id="${ingrediente.id}" type="button">  ✏️ Editar</button>
         <button class="btn-danger" data-id="${ingrediente.id}" type="button">  🗑️ Eliminar</button>
@@ -328,8 +423,14 @@ function renderizarIngredientes() {
 
 function renderizarRecetas() {
   recetasBody.innerHTML = "";
+  const recetasFiltradas =
+  recetas.filter(function (receta) {
+    return receta.nombre
+      .toLowerCase()
+      .includes(filtroReceta);
+  });
 
-  recetas.forEach(function (receta) {
+  recetasFiltradas.forEach(function (receta) {
     const row = document.createElement("tr");
     const costeTotal = calcularCosteTotalReceta(receta);
     const costePorRacion = receta.raciones > 0 ? costeTotal / receta.raciones : 0;
@@ -557,6 +658,8 @@ function renderizarUnidadesComponente() {
   });
 }
 
+
+
 /* =========================
    6. Events
 ========================= */
@@ -617,6 +720,8 @@ const alergenosSeleccionados = [...alergenosInputs]
     cantidad: Number(cantidadInput.value),
     precio: Number(precioInput.value),
     merma: Number(mermaInput.value),
+    stockActual: Number(stockActualInput.value),
+    stockMinimo: Number(stockMinimoInput.value),
     alergenos: alergenosSeleccionados
   };
 
@@ -682,6 +787,8 @@ tbody.addEventListener("click", function (event) {
     cantidadInput.value = ingrediente.cantidad;
     precioInput.value = ingrediente.precio;
     mermaInput.value = ingrediente.merma;
+    stockActualInput.value = ingrediente.stockActual || 0;
+    stockMinimoInput.value = ingrediente.stockMinimo || 0;
 
     alergenosInputs.forEach(function (checkbox) {
       checkbox.checked = ingrediente.alergenos?.includes(checkbox.value) || false;
@@ -689,6 +796,10 @@ tbody.addEventListener("click", function (event) {
 
     actualizarContadorAlergenos();
     ingredienteEditando = id;
+    form.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
   }
 });
 
@@ -777,6 +888,10 @@ recetasBody.addEventListener("click", function (event) {
     recetaPrecioVentaInput.value = receta.precioVenta;
 
     recetaEditando = id;
+    recetaForm.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
   }
 });
 
@@ -859,6 +974,18 @@ componentesBody.addEventListener("click", function (event) {
 });
 
 componenteItemInput.addEventListener("change", renderizarUnidadesComponente);
+
+buscarIngredienteInput.addEventListener("input", function () {
+  filtroIngrediente = buscarIngredienteInput.value.toLowerCase();
+
+  renderizarIngredientes();
+});
+
+buscarRecetaInput.addEventListener("input", function () {
+  filtroReceta = buscarRecetaInput.value.toLowerCase();
+
+  renderizarRecetas();
+});
 
 /* =========================
    7. Init
