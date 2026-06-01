@@ -181,6 +181,44 @@ function obtenerNombreComponente(componente) {
   }
 }
 
+function obtenerAlergenosReceta(receta) {
+  const alergenos = [];
+
+  receta.componentes.forEach(function (componente) {
+    if (componente.tipo === "ingrediente") {
+      const ingrediente = ingredientes.find(function (ingrediente) {
+        return ingrediente.id === componente.itemId;
+      });
+
+      if (ingrediente && ingrediente.alergenos) {
+        ingrediente.alergenos.forEach(function (alergeno) {
+          if (!alergenos.includes(alergeno)) {
+            alergenos.push(alergeno);
+          }
+        });
+      }
+    }
+
+    if (componente.tipo === "receta") {
+      const subreceta = recetas.find(function (receta) {
+        return receta.id === componente.itemId;
+      });
+
+      if (subreceta) {
+        const alergenosSubreceta = obtenerAlergenosReceta(subreceta);
+
+        alergenosSubreceta.forEach(function (alergeno) {
+          if (!alergenos.includes(alergeno)) {
+            alergenos.push(alergeno);
+          }
+        });
+      }
+    }
+  });
+
+  return alergenos;
+}
+
 function obtenerUnidadesCompatibles(item, tipo) {
   if (tipo === "receta") {
     return [item.rendimientoUnidad];
@@ -195,6 +233,26 @@ function obtenerUnidadesCompatibles(item, tipo) {
   }
 
   return ["ud"];
+}
+
+function obtenerAlergenosComponente(componente) {
+  if (componente.tipo === "ingrediente") {
+    const ingrediente = ingredientes.find(function (ingrediente) {
+      return ingrediente.id === componente.itemId;
+    });
+
+    return ingrediente?.alergenos || [];
+  }
+
+  if (componente.tipo === "receta") {
+    const receta = recetas.find(function (receta) {
+      return receta.id === componente.itemId;
+    });
+
+    return receta ? obtenerAlergenosReceta(receta) : [];
+  }
+
+  return [];
 }
 
 /* =========================
@@ -299,9 +357,23 @@ function renderizarRecetas() {
         : foodCost <= 35
         ? "food-cost-warning"
         : "food-cost-danger";
+
+    const alergenosReceta = obtenerAlergenosReceta(receta);
       
         row.innerHTML = `
-      <td>${receta.nombre}</td>
+      <td>
+        ${receta.nombre}
+        ${
+          alergenosReceta.length
+            ? `<span
+                class="recipe-allergen-badge"
+                title="${alergenosReceta.join(", ")}"
+              >
+                ⚠️ ${alergenosReceta.length}
+              </span>`
+            : ""
+          }
+</td>
       <td>${receta.categoria}</td>
       <td>
         ${receta.rendimientoCantidad}
@@ -385,16 +457,47 @@ function renderizarComponentes() {
     return;
   }
 
+  const costeTotalComponentes = recetaSeleccionada.componentes.reduce(
+    function (total, componente) {
+      return total + calcularCosteComponente(componente);
+    },
+    0
+  );
+
   recetaSeleccionada.componentes.forEach(function (componente, index) {
     const row = document.createElement("tr");
     const nombreComponente = obtenerNombreComponente(componente);
     const coste = calcularCosteComponente(componente);
+    const alergenosComponente = obtenerAlergenosComponente(componente);
+    const costeTotalComponentes = recetaSeleccionada.componentes.reduce(
+    function (total, componente) {
+      return total + calcularCosteComponente(componente);
+        },
+        0
+      );
+    const porcentaje =
+      costeTotalComponentes > 0
+        ? (coste / costeTotalComponentes) * 100
+        : 0;
 
     row.innerHTML = `
-      <td>${nombreComponente}</td>
+      <td>
+        ${nombreComponente}
+          ${
+            alergenosComponente.length
+              ? `<span
+                  class="component-allergen-badge"
+                  title="${alergenosComponente.join(", ")}"
+                >
+                  ⚠️ ${alergenosComponente.length}
+                </span>`
+              : ""
+            }
+      </td>
       <td>${componente.cantidad}</td>
       <td>${componente.unidad}</td>
       <td>${coste.toFixed(2)} €</td>
+      <td>${porcentaje.toFixed(1)}%</td>
       <td>
         <button
           class="btn-danger btn-eliminar-componente"
@@ -409,13 +512,6 @@ function renderizarComponentes() {
     componentesBody.appendChild(row);
   });
 
-  const costeTotalComponentes = recetaSeleccionada.componentes.reduce(
-  function (total, componente) {
-    return total + calcularCosteComponente(componente);
-  },
-  0
-);
-
 const totalRow = document.createElement("tr");
 
 totalRow.classList.add("total-row");
@@ -423,6 +519,7 @@ totalRow.classList.add("total-row");
 totalRow.innerHTML = `
   <td colspan="3"><strong>Coste total</strong></td>
   <td><strong>${costeTotalComponentes.toFixed(2)} €</strong></td>
+  <td><strong>100%</strong></td>
   <td></td>
 `;
 
@@ -557,6 +654,9 @@ if (ingredienteDuplicado) {
 tbody.addEventListener("click", function (event) {
   if (event.target.classList.contains("btn-danger")) {
     const id = Number(event.target.dataset.id);
+    if (!confirm("¿Estás seguro de que quieres continuar?")) {
+      return;
+    }
 
     ingredientes = ingredientes.filter(function (ingrediente) {
       return ingrediente.id !== id;
@@ -648,6 +748,9 @@ recetaForm.reset();
 recetasBody.addEventListener("click", function (event) {
   if (event.target.classList.contains("btn-danger-receta")) {
     const id = Number(event.target.dataset.id);
+    if (!confirm("¿Estás seguro de que quieres continuar?")) {
+      return;
+    }
 
     recetas = recetas.filter(function (receta) {
       return receta.id !== id;
@@ -735,6 +838,9 @@ componenteForm.addEventListener("submit", function (event) {
 
 componentesBody.addEventListener("click", function (event) {
   if (event.target.classList.contains("btn-eliminar-componente")) {
+    if (!confirm("¿Estás seguro de que quieres continuar?")) {
+      return;
+    }
     const index = Number(event.target.dataset.index);
 
     recetaSeleccionada.componentes.splice(index, 1);
