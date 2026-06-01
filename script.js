@@ -181,6 +181,22 @@ function obtenerNombreComponente(componente) {
   }
 }
 
+function obtenerUnidadesCompatibles(item, tipo) {
+  if (tipo === "receta") {
+    return [item.rendimientoUnidad];
+  }
+
+  if (item.unidad === "kg" || item.unidad === "g") {
+    return ["kg", "g"];
+  }
+
+  if (item.unidad === "l" || item.unidad === "ml") {
+    return ["l", "ml"];
+  }
+
+  return ["ud"];
+}
+
 /* =========================
    4. Storage
 ========================= */
@@ -262,6 +278,21 @@ function renderizarRecetas() {
     const foodCost = receta.precioVenta > 0
       ? (costePorRacion / receta.precioVenta) * 100
       : 0;
+    const beneficioPorRacion =
+      receta.precioVenta - costePorRacion;
+
+    const margen =
+      receta.precioVenta > 0
+        ? (beneficioPorRacion / receta.precioVenta) * 100
+        : 0;
+
+    const margenClass =
+  margen > 75
+    ? "margin-good"
+    : margen >= 60
+    ? "margin-warning"
+    : "margin-danger";
+
     const foodCostClass =
       foodCost < 25
         ? "food-cost-good"
@@ -283,6 +314,8 @@ function renderizarRecetas() {
       <td class="${foodCostClass}">
         ${foodCost.toFixed(1)}%
       </td>
+      <td>${beneficioPorRacion.toFixed(2)} €</td>
+      <td class="${margenClass}">${margen.toFixed(1)}%</td>
       <td>
         <button class="btn-edit-receta" data-id="${receta.id}" type="button">
           ✏️ Editar
@@ -306,24 +339,40 @@ function cargarOpcionesComponentes() {
     <option value="">Selecciona un elemento</option>
   `;
 
-  ingredientes.forEach(function (ingrediente) {
-    const option = document.createElement("option");
-
-    option.value = `ingrediente-${ingrediente.id}`;
-    option.textContent = `${ingrediente.nombre} (Ingrediente)`;
-
-    componenteItemInput.appendChild(option);
+  const opcionesIngredientes = ingredientes.map(function (ingrediente) {
+    return {
+      tipo: "ingrediente",
+      id: ingrediente.id,
+      nombre: ingrediente.nombre,
+      etiqueta: "Ingrediente"
+    };
   });
 
-  recetas.forEach(function (receta) {
-    if (recetaSeleccionada && receta.id === recetaSeleccionada.id) {
-      return;
-    }
+  const opcionesRecetas = recetas
+    .filter(function (receta) {
+      return !recetaSeleccionada || receta.id !== recetaSeleccionada.id;
+    })
+    .map(function (receta) {
+      return {
+        tipo: "receta",
+        id: receta.id,
+        nombre: receta.nombre,
+        etiqueta: "Receta"
+      };
+    });
 
+  const opcionesOrdenadas = [
+    ...opcionesIngredientes,
+    ...opcionesRecetas
+  ].sort(function (a, b) {
+    return a.nombre.localeCompare(b.nombre);
+  });
+
+  opcionesOrdenadas.forEach(function (opcion) {
     const option = document.createElement("option");
 
-    option.value = `receta-${receta.id}`;
-    option.textContent = `${receta.nombre} (Receta)`;
+    option.value = `${opcion.tipo}-${opcion.id}`;
+    option.textContent = `${opcion.nombre} (${opcion.etiqueta})`;
 
     componenteItemInput.appendChild(option);
   });
@@ -380,9 +429,78 @@ totalRow.innerHTML = `
 componentesBody.appendChild(totalRow);
 }
 
+function renderizarUnidadesComponente() {
+  const valorSeleccionado = componenteItemInput.value;
+
+  if (!valorSeleccionado) return;
+
+  const [tipo, itemId] = valorSeleccionado.split("-");
+  const id = Number(itemId);
+
+  const item =
+    tipo === "ingrediente"
+      ? ingredientes.find(function (ingrediente) {
+          return ingrediente.id === id;
+        })
+      : recetas.find(function (receta) {
+          return receta.id === id;
+        });
+
+  if (!item) return;
+
+  const unidadesCompatibles = obtenerUnidadesCompatibles(item, tipo);
+
+  componenteUnidadInput.innerHTML = "";
+
+  unidadesCompatibles.forEach(function (unidad) {
+    const option = document.createElement("option");
+    option.value = unidad;
+    option.textContent = unidad;
+    componenteUnidadInput.appendChild(option);
+  });
+}
+
 /* =========================
    6. Events
 ========================= */
+
+function activarScrollHorizontalDrag() {
+  const tableContainers = document.querySelectorAll(".table-container");
+
+  tableContainers.forEach(function (container) {
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+
+    container.addEventListener("mousedown", function (event) {
+      isDown = true;
+      container.classList.add("dragging");
+      startX = event.pageX - container.offsetLeft;
+      scrollLeft = container.scrollLeft;
+    });
+
+    container.addEventListener("mouseleave", function () {
+      isDown = false;
+      container.classList.remove("dragging");
+    });
+
+    container.addEventListener("mouseup", function () {
+      isDown = false;
+      container.classList.remove("dragging");
+    });
+
+    container.addEventListener("mousemove", function (event) {
+      if (!isDown) return;
+
+      event.preventDefault();
+
+      const x = event.pageX - container.offsetLeft;
+      const walk = x - startX;
+
+      container.scrollLeft = scrollLeft - walk;
+    });
+  });
+}
 
 form.addEventListener("submit", function (event) {
   event.preventDefault();
@@ -578,6 +696,7 @@ recetasBody.addEventListener("click", function (event) {
 
     componentesCard.style.display = "block";
     cargarOpcionesComponentes();
+    renderizarUnidadesComponente();
     renderizarComponentes();
   }
 });
@@ -633,9 +752,12 @@ componentesBody.addEventListener("click", function (event) {
   }
 });
 
+componenteItemInput.addEventListener("change", renderizarUnidadesComponente);
+
 /* =========================
    7. Init
 ========================= */
 
 cargarIngredientes();
 cargarRecetas();
+activarScrollHorizontalDrag();
