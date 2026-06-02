@@ -288,6 +288,11 @@ td:last-child {
   margin-top: 0;
 }
 
+.movimientos-table-container {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
 /* =========================
    8. Info Box
 ========================= */
@@ -418,6 +423,19 @@ td:last-child {
   min-width: 1300px;
 }
 
+.recipe-stock-warning {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 6px;
+
+  border-radius: 999px;
+
+  font-size: 0.75rem;
+  font-weight: 700;
+
+  background-color: #ffe0b2;
+  color: #b45309;
+}
 /* =========================
    11. Food Cost
 ========================= */
@@ -476,6 +494,16 @@ td:last-child {
   font-weight: 700;
 }
 
+.movimiento-search-container {
+  position: static;
+  margin: 20px 0 12px;
+}
+
+.movimiento-search-container input {
+  width: 260px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}
 /* =========================
    13. Responsive
 ========================= */

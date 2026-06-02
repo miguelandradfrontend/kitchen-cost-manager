@@ -45,11 +45,17 @@ const componenteUnidadInput = document.querySelector("#componente-unidad");
 const componentesBody = document.querySelector("#componentes-body");
 const componentesCard = document.querySelector("#componentes-card");
 const stockSummary = document.querySelector("#stock-summary");
-const buscarIngredienteInput =
-  document.querySelector("#buscar-ingrediente");
+const buscarIngredienteInput =  document.querySelector("#buscar-ingrediente");
 
-const buscarRecetaInput =
-  document.querySelector("#buscar-receta");
+const buscarRecetaInput =  document.querySelector("#buscar-receta");
+const movimientoForm =  document.querySelector("#movimiento-form");
+const movimientoIngredienteInput =  document.querySelector("#movimiento-ingrediente");
+const movimientoTipoInput =  document.querySelector("#movimiento-tipo");
+const movimientoCantidadInput =  document.querySelector("#movimiento-cantidad");
+const movimientoUnidadInput =  document.querySelector("#movimiento-unidad");
+const movimientoNotaInput =  document.querySelector("#movimiento-nota");
+const movimientosBody =  document.querySelector("#movimientos-body");
+const buscarMovimientoInput = document.querySelector("#buscar-movimiento");
 
 /* =========================
    2. State
@@ -58,10 +64,12 @@ const buscarRecetaInput =
 let ingredientes = [];
 let ingredienteEditando = null;
 let recetas = [];
+let movimientos = [];
 let recetaEditando = null;
 let recetaSeleccionada = null;
 let filtroIngrediente = "";
 let filtroReceta = "";
+let filtroMovimiento = "";
 
 /* =========================
    3. Business Logic
@@ -166,6 +174,51 @@ function convertirUnidadBase(ingrediente) {
   return ingrediente.cantidad;
 }
 
+function convertirCantidadMovimiento(
+  cantidad,
+  unidadMovimiento,
+  unidadIngrediente
+) {
+
+  if (unidadMovimiento === unidadIngrediente) {
+    return cantidad;
+  }
+
+  // g -> kg
+  if (
+    unidadMovimiento === "g" &&
+    unidadIngrediente === "kg"
+  ) {
+    return cantidad / 1000;
+  }
+
+  // kg -> g
+  if (
+    unidadMovimiento === "kg" &&
+    unidadIngrediente === "g"
+  ) {
+    return cantidad * 1000;
+  }
+
+  // ml -> l
+  if (
+    unidadMovimiento === "ml" &&
+    unidadIngrediente === "l"
+  ) {
+    return cantidad / 1000;
+  }
+
+  // l -> ml
+  if (
+    unidadMovimiento === "l" &&
+    unidadIngrediente === "ml"
+  ) {
+    return cantidad * 1000;
+  }
+
+  return cantidad;
+}
+
 function actualizarContadorAlergenos() {
   const totalSeleccionados = [...alergenosInputs].filter(function (checkbox) {
     return checkbox.checked;
@@ -243,7 +296,7 @@ function obtenerUnidadesCompatibles(item, tipo) {
     return ["l", "ml"];
   }
 
-  return ["ud"];
+  return ["unidad"];
 }
 
 function obtenerAlergenosComponente(componente) {
@@ -266,6 +319,54 @@ function obtenerAlergenosComponente(componente) {
   return [];
 }
 
+function obtenerIngredientesSinStockReceta(receta) {
+  const ingredientesSinStock = [];
+
+  receta.componentes.forEach(function (componente) {
+
+    if (componente.tipo === "ingrediente") {
+
+      const ingrediente =
+        ingredientes.find(function (ingrediente) {
+          return ingrediente.id === componente.itemId;
+        });
+
+      if (
+        ingrediente &&
+        ingrediente.stockActual <= 0
+      ) {
+        ingredientesSinStock.push(
+          ingrediente.nombre
+        );
+      }
+    }
+
+    if (componente.tipo === "receta") {
+
+      const subreceta =
+        recetas.find(function (receta) {
+          return receta.id === componente.itemId;
+        });
+
+      if (subreceta) {
+
+        const faltantesSubreceta =
+          obtenerIngredientesSinStockReceta(subreceta);
+
+        faltantesSubreceta.forEach(function (nombre) {
+
+          if (
+            !ingredientesSinStock.includes(nombre)
+          ) {
+            ingredientesSinStock.push(nombre);
+          }
+        });
+      }
+    }
+  });
+  return ingredientesSinStock;
+}
+
 function obtenerEstadoStock(ingrediente) {
   if (ingrediente.stockActual <= 0) {
     return {
@@ -285,6 +386,38 @@ function obtenerEstadoStock(ingrediente) {
     texto: "Stock OK",
     clase: "stock-good"
   };
+}
+function aplicarMovimientoStock(movimiento) {
+  const ingrediente = ingredientes.find(function (ingrediente) {
+    return ingrediente.id === movimiento.ingredienteId;
+  });
+
+  if (!ingrediente) {
+    return;
+  }
+
+  const cantidadConvertida =
+  convertirCantidadMovimiento(
+    movimiento.cantidad,
+    movimiento.unidad,
+    ingrediente.unidad
+  );
+
+  if (movimiento.tipo === "entrada") {
+    ingrediente.stockActual += cantidadConvertida;
+  }
+
+  if (movimiento.tipo === "salida") {
+    ingrediente.stockActual -= cantidadConvertida;
+
+    if (ingrediente.stockActual < 0) {
+      ingrediente.stockActual = 0;
+    }
+  }
+
+  if (movimiento.tipo === "ajuste") {
+    ingrediente.stockActual = cantidadConvertida;
+  }
 }
 
 /* =========================
@@ -327,9 +460,119 @@ function cargarRecetas() {
   }
 }
 
+function guardarMovimientos() {
+  localStorage.setItem(
+    "movimientos",
+    JSON.stringify(movimientos)
+  );
+}
+
+function cargarMovimientos() {
+  const movimientosGuardados =
+    localStorage.getItem("movimientos");
+
+  if (movimientosGuardados) {
+    movimientos = JSON.parse(movimientosGuardados);
+  }
+}
+
 /* =========================
    5. Render
 ========================= */
+function renderizarUnidadesMovimiento() {
+  const ingredienteId = Number(movimientoIngredienteInput.value);
+
+  const ingrediente = ingredientes.find(function (ingrediente) {
+    return ingrediente.id === ingredienteId;
+  });
+
+  if (!ingrediente) return;
+
+  const unidadesCompatibles =
+    obtenerUnidadesCompatibles(ingrediente, "ingrediente");
+
+  movimientoUnidadInput.innerHTML = "";
+
+  unidadesCompatibles.forEach(function (unidad) {
+    const option = document.createElement("option");
+
+    option.value = unidad;
+    option.textContent = unidad;
+
+    movimientoUnidadInput.appendChild(option);
+  });
+}
+
+function obtenerNombreIngredientePorId(id) {
+  const ingrediente = ingredientes.find(function (ingrediente) {
+    return ingrediente.id === id;
+  });
+
+  return ingrediente ? ingrediente.nombre : "Ingrediente no encontrado";
+}
+
+function renderizarMovimientos() {
+  movimientosBody.innerHTML = "";
+
+const movimientosOrdenados =
+  [...movimientos].reverse();
+
+const movimientosFiltrados =
+  movimientosOrdenados.filter(function (movimiento) {
+    const nombreIngrediente =
+      obtenerNombreIngredientePorId(
+        movimiento.ingredienteId
+      ).toLowerCase();
+
+    const tipo =
+      movimiento.tipo.toLowerCase();
+
+    const nota =
+      movimiento.nota.toLowerCase();
+
+    return (
+      nombreIngrediente.includes(filtroMovimiento) ||
+      tipo.includes(filtroMovimiento) ||
+      nota.includes(filtroMovimiento)
+    );
+  });
+
+movimientosFiltrados.forEach(function (movimiento) {
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td>${new Date(movimiento.fecha).toLocaleString()}</td>
+      <td>${obtenerNombreIngredientePorId(movimiento.ingredienteId)}</td>
+      <td>${movimiento.tipo}</td>
+      <td>${movimiento.cantidad}</td>
+      <td>${movimiento.unidad}</td>
+      <td>${movimiento.nota || "-"}</td>
+    `;
+    movimientosBody.appendChild(row);
+  });
+}
+function cargarOpcionesMovimientoIngredientes() {
+
+  movimientoIngredienteInput.innerHTML = `
+    <option value="">
+      Selecciona un ingrediente
+    </option>
+  `;
+
+  const ingredientesOrdenados =
+    [...ingredientes].sort(function (a, b) {
+      return a.nombre.localeCompare(b.nombre);
+    });
+
+  ingredientesOrdenados.forEach(function (ingrediente) {
+    const option = document.createElement("option");
+
+    option.value = ingrediente.id;
+    option.textContent = ingrediente.nombre;
+    movimientoIngredienteInput.appendChild(option);
+  });
+  renderizarUnidadesMovimiento();
+}
 
 function renderizarResumenStock() {
   const sinStock = ingredientes.filter(function (ingrediente) {
@@ -460,6 +703,7 @@ function renderizarRecetas() {
         : "food-cost-danger";
 
     const alergenosReceta = obtenerAlergenosReceta(receta);
+    const ingredientesSinStock = obtenerIngredientesSinStockReceta(receta);
       
         row.innerHTML = `
       <td>
@@ -473,8 +717,19 @@ function renderizarRecetas() {
                 ⚠️ ${alergenosReceta.length}
               </span>`
             : ""
-          }
-</td>
+        }
+        ${
+          ingredientesSinStock.length
+            ? `<span
+                class="recipe-stock-warning"
+                title="Sin stock: ${ingredientesSinStock.join(", ")}"
+              >
+                📦 ${ingredientesSinStock.length}
+              </span>
+              `
+              : ""
+        }
+      </td>
       <td>${receta.categoria}</td>
       <td>
         ${receta.rendimientoCantidad}
@@ -664,6 +919,44 @@ function renderizarUnidadesComponente() {
    6. Events
 ========================= */
 
+buscarMovimientoInput.addEventListener("input", function () {
+  filtroMovimiento =
+    buscarMovimientoInput.value.toLowerCase();
+
+  renderizarMovimientos();
+});
+movimientoIngredienteInput.addEventListener(
+  "change",
+  renderizarUnidadesMovimiento
+);
+
+movimientoForm.addEventListener("submit", function (event) {
+  event.preventDefault();
+
+  const movimiento = {
+    id: Date.now(),
+    ingredienteId: Number(movimientoIngredienteInput.value),
+    tipo: movimientoTipoInput.value,
+    cantidad: Number(movimientoCantidadInput.value),
+    unidad: movimientoUnidadInput.value,
+    fecha: new Date().toISOString(),
+    nota: movimientoNotaInput.value
+  };
+
+  aplicarMovimientoStock(movimiento);
+
+  movimientos.push(movimiento);
+
+  guardarIngredientes();
+  guardarMovimientos();
+
+  renderizarIngredientes();
+  renderizarRecetas();
+  renderizarMovimientos();
+
+  movimientoForm.reset();
+});
+
 function activarScrollHorizontalDrag() {
   const tableContainers = document.querySelectorAll(".table-container");
 
@@ -751,6 +1044,7 @@ if (ingredienteDuplicado) {
 }
     guardarIngredientes();
     renderizarIngredientes();
+    cargarOpcionesMovimientoIngredientes();
     form.reset();
     alergenosSection.open = false;
     actualizarContadorAlergenos();
@@ -768,8 +1062,8 @@ tbody.addEventListener("click", function (event) {
     });
 
     guardarIngredientes();
-    console.log(ingredientes);
     renderizarIngredientes();
+    cargarOpcionesMovimientoIngredientes();
   }
 });
 
@@ -993,4 +1287,8 @@ buscarRecetaInput.addEventListener("input", function () {
 
 cargarIngredientes();
 cargarRecetas();
+cargarMovimientos();
+cargarOpcionesMovimientoIngredientes();
+renderizarMovimientos();
 activarScrollHorizontalDrag();
+
