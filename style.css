@@ -542,8 +542,30 @@ td:last-child {
   color: #dc3545;
   font-weight: 700;
 }
+
 /* =========================
-   14. Responsive
+   14. Exportaciones
+========================= */
+
+.exportaciones-botones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.exportaciones-botones button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  background-color: #085a9c;
+  color: white;
+  font-weight: 700;
+}
+
+/* =========================
+   15. Responsive
 ========================= */
 @media (max-width: 768px) {
 

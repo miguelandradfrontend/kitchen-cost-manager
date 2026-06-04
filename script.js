@@ -47,6 +47,10 @@ const produccionCantidadInput = document.querySelector("#produccion-cantidad");
 const produccionNotaInput = document.querySelector("#produccion-nota");
 const buscarProduccionInput = document.querySelector("#buscar-produccion");
 const produccionesBody = document.querySelector("#producciones-body");
+const exportarIngredientesBtn = document.querySelector("#exportar-ingredientes-btn");
+const exportarRecetasBtn = document.querySelector("#exportar-recetas-btn");
+const exportarMovimientosBtn = document.querySelector("#exportar-movimientos-btn");
+const exportarProduccionesBtn = document.querySelector("#exportar-producciones-btn");
 
 /* =========================
    2. State
@@ -474,6 +478,44 @@ function aplicarMovimientoStock(movimiento) {
   }
 }
 
+function descargarCSV(nombreArchivo, filas) {
+
+  if (!filas.length) {
+    alert("No hay datos para exportar.");
+    return;
+  }
+
+  const csv = filas
+    .map(function (fila) {
+
+      return fila
+        .map(function (valor) {
+
+          return `"${String(valor ?? "").replaceAll('"', '""')}"`;
+
+        })
+        .join(",");
+
+    })
+    .join("\n");
+
+  const blob = new Blob(
+    [csv],
+    {
+      type: "text/csv;charset=utf-8;"
+    }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const enlace = document.createElement("a");
+
+  enlace.href = url;
+  enlace.download = nombreArchivo;
+  enlace.click();
+
+  URL.revokeObjectURL(url);
+}
+
 /* =========================
    4. Storage
 ========================= */
@@ -708,7 +750,6 @@ ingredientesFiltrados.forEach(function (ingrediente) {
       <td>${cantidadUtil.toFixed(2)} ${ingrediente.unidad}</td>
       <td>${costeUnitario.toFixed(2)} €/${ingrediente.unidad}</td>
       <td>${costeBase.toFixed(2)} €/base</td>
-         
       <td>
         <button class="btn-edit" data-id="${ingrediente.id}" type="button">  ✏️ Editar</button>
         <button class="btn-danger" data-id="${ingrediente.id}" type="button">  🗑️ Eliminar</button>
@@ -1061,6 +1102,124 @@ function renderizarProducciones() {
 /* =========================
    6. Events
 ========================= */
+
+exportarIngredientesBtn.addEventListener("click", function () {
+
+  const filas = [
+    [
+      "Nombre",
+      "Unidad",
+      "Cantidad",
+      "Precio",
+      "Stock Actual",
+      "Stock Mínimo"
+    ],
+
+    ...ingredientes.map(function (ingrediente) {
+      return [
+        ingrediente.nombre,
+        ingrediente.unidad,
+        ingrediente.cantidad,
+        ingrediente.precio,
+        ingrediente.stockActual,
+        ingrediente.stockMinimo
+      ];
+    })
+  ];
+
+  descargarCSV("ingredientes.csv", filas);
+});
+
+exportarMovimientosBtn.addEventListener("click", function () {
+
+  const filas = [
+    [
+      "Fecha",
+      "Ingrediente",
+      "Tipo",
+      "Cantidad",
+      "Unidad",
+      "Nota"
+    ],
+
+    ...movimientos.map(function (movimiento) {
+      return [
+        new Date(movimiento.fecha).toLocaleString(),
+        obtenerNombreIngredientePorId(movimiento.ingredienteId),
+        movimiento.tipo,
+        movimiento.cantidad,
+        movimiento.unidad,
+        movimiento.nota
+      ];
+    })
+  ];
+
+  descargarCSV("movimientos-inventario.csv", filas);
+});
+
+exportarProduccionesBtn.addEventListener("click", function () {
+
+  const filas = [
+    [
+      "Fecha",
+      "Receta",
+      "Cantidad",
+      "Nota",
+      "Estado"
+    ],
+
+    ...producciones.map(function (produccion) {
+      return [
+        new Date(produccion.fecha).toLocaleString(),
+        obtenerNombreRecetaPorId(produccion.recetaId),
+        produccion.cantidad,
+        produccion.nota,
+        produccion.revertida ? "Revertida" : "Activa"
+      ];
+    })
+  ];
+  descargarCSV("producciones.csv", filas);
+
+});
+
+exportarRecetasBtn.addEventListener("click", function () {
+
+  const filas = [
+    [
+      "Nombre",
+      "Categoría",
+      "Rendimiento",
+      "Unidad",
+      "Raciones",
+      "Precio Venta",
+      "Coste Total",
+      "Coste por Ración",
+      "Food Cost %"
+    ],
+
+    ...recetas.map(function (receta) {
+      const costeTotal = calcularCosteTotalReceta(receta);
+      const costePorRacion =
+        receta.raciones > 0 ? costeTotal / receta.raciones : 0;
+      const foodCost =
+        receta.precioVenta > 0 ? (costePorRacion / receta.precioVenta) * 100 : 0;
+
+      return [
+        receta.nombre,
+        receta.categoria,
+        receta.rendimientoCantidad,
+        receta.rendimientoUnidad,
+        receta.raciones,
+        receta.precioVenta,
+        costeTotal.toFixed(2),
+        costePorRacion.toFixed(2),
+        foodCost.toFixed(2)
+      ];
+    })
+  ];
+  descargarCSV("recetas.csv", filas);
+
+});
 
 buscarMovimientoInput.addEventListener("input", function () {
   filtroMovimiento =
