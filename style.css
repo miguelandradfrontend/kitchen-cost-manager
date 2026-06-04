@@ -210,6 +210,14 @@ button {
   gap: 6px;
 }
 
+.btn-revertir-produccion {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
 /* =========================
    7. Table
 ========================= */
@@ -504,8 +512,38 @@ td:last-child {
   padding: 6px 10px;
   font-size: 0.9rem;
 }
+
 /* =========================
-   13. Responsive
+   13. Producción de recetas
+========================= */
+
+.produccion-search-container {
+  position: static;
+  margin: 20px 0 12px;
+}
+
+.produccion-search-container input {
+  width: 260px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}
+
+.producciones-table-container {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.produccion-activa {
+  color: #198754;
+  font-weight: 700;
+}
+
+.produccion-revertida {
+  color: #dc3545;
+  font-weight: 700;
+}
+/* =========================
+   14. Responsive
 ========================= */
 @media (max-width: 768px) {
 

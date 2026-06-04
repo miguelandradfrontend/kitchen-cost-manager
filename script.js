@@ -4,7 +4,6 @@
 
 const tbody = document.querySelector("#ingredientes-body");
 const form = document.querySelector("form");
-
 const nombreInput = document.querySelector("#nombre");
 const unidadInput = document.querySelector("#unidad");
 const cantidadInput = document.querySelector("#cantidad");
@@ -12,32 +11,19 @@ const precioInput = document.querySelector("#precio");
 const mermaInput = document.querySelector("#merma");
 const stockActualInput = document.querySelector("#stock-actual");
 const stockMinimoInput = document.querySelector("#stock-minimo");
-const alergenosInputs = document.querySelectorAll(
-  '.allergens-grid input[type="checkbox"]'
-);
+const alergenosInputs = document.querySelectorAll('.allergens-grid input[type="checkbox"]');
 const alergenosSection = document.querySelector(".allergens-section");
 const limpiarFormularioBtn = document.querySelector("#limpiar-formulario");
 const alergenosSummary = document.querySelector(".allergens-section summary");
-
 const recetasBody = document.querySelector("#recetas-body");
 const recetaForm = document.querySelector("#receta-form");
-
 const recetaNombreInput = document.querySelector("#receta-nombre");
 const recetaCategoriaInput = document.querySelector("#receta-categoria");
-const recetaRendimientoCantidadInput = document.querySelector(
-  "#receta-rendimiento-cantidad"
-);
-const recetaRendimientoUnidadInput = document.querySelector(
-  "#receta-rendimiento-unidad"
-);
+const recetaRendimientoCantidadInput = document.querySelector("#receta-rendimiento-cantidad");
+const recetaRendimientoUnidadInput = document.querySelector("#receta-rendimiento-unidad");
 const recetaRacionesInput = document.querySelector("#receta-raciones");
-const recetaPrecioVentaInput = document.querySelector(
-  "#receta-precio-venta"
-);
-const limpiarRecetaFormularioBtn = document.querySelector(
-  "#limpiar-receta-formulario"
-);
-
+const recetaPrecioVentaInput = document.querySelector("#receta-precio-venta");
+const limpiarRecetaFormularioBtn = document.querySelector("#limpiar-receta-formulario");
 const componenteForm = document.querySelector("#componente-form");
 const componenteItemInput = document.querySelector("#componente-item");
 const componenteCantidadInput = document.querySelector("#componente-cantidad");
@@ -46,7 +32,6 @@ const componentesBody = document.querySelector("#componentes-body");
 const componentesCard = document.querySelector("#componentes-card");
 const stockSummary = document.querySelector("#stock-summary");
 const buscarIngredienteInput =  document.querySelector("#buscar-ingrediente");
-
 const buscarRecetaInput =  document.querySelector("#buscar-receta");
 const movimientoForm =  document.querySelector("#movimiento-form");
 const movimientoIngredienteInput =  document.querySelector("#movimiento-ingrediente");
@@ -56,6 +41,12 @@ const movimientoUnidadInput =  document.querySelector("#movimiento-unidad");
 const movimientoNotaInput =  document.querySelector("#movimiento-nota");
 const movimientosBody =  document.querySelector("#movimientos-body");
 const buscarMovimientoInput = document.querySelector("#buscar-movimiento");
+const produccionForm = document.querySelector("#produccion-form");
+const produccionRecetaInput = document.querySelector("#produccion-receta");
+const produccionCantidadInput = document.querySelector("#produccion-cantidad");
+const produccionNotaInput = document.querySelector("#produccion-nota");
+const buscarProduccionInput = document.querySelector("#buscar-produccion");
+const produccionesBody = document.querySelector("#producciones-body");
 
 /* =========================
    2. State
@@ -70,6 +61,8 @@ let recetaSeleccionada = null;
 let filtroIngrediente = "";
 let filtroReceta = "";
 let filtroMovimiento = "";
+let producciones = [];
+let filtroProduccion = "";
 
 /* =========================
    3. Business Logic
@@ -217,6 +210,67 @@ function convertirCantidadMovimiento(
   }
 
   return cantidad;
+}
+
+function obtenerIngredientesDeReceta(receta, multiplicador = 1) {
+  const ingredientesNecesarios = [];
+
+  receta.componentes.forEach(function (componente) {
+    if (componente.tipo === "ingrediente") {
+      ingredientesNecesarios.push({
+        ingredienteId: componente.itemId,
+        cantidad: componente.cantidad * multiplicador,
+        unidad: componente.unidad
+      });
+    }
+
+    if (componente.tipo === "receta") {
+      const subreceta = recetas.find(function (receta) {
+        return receta.id === componente.itemId;
+      });
+
+      if (!subreceta) {
+        return;
+      }
+
+      let rendimientoBase = subreceta.rendimientoCantidad;
+
+      if (subreceta.rendimientoUnidad === "kg") {
+        rendimientoBase *= 1000;
+      }
+
+      if (subreceta.rendimientoUnidad === "l") {
+        rendimientoBase *= 1000;
+      }
+
+      let cantidadUsadaBase = componente.cantidad;
+
+      if (componente.unidad === "kg") {
+        cantidadUsadaBase *= 1000;
+      }
+
+      if (componente.unidad === "l") {
+        cantidadUsadaBase *= 1000;
+      }
+
+      const factorSubreceta =
+        rendimientoBase > 0
+          ? cantidadUsadaBase / rendimientoBase
+          : 0;
+
+      const ingredientesSubreceta =
+        obtenerIngredientesDeReceta(
+          subreceta,
+          multiplicador * factorSubreceta
+        );
+
+      ingredientesSubreceta.forEach(function (ingrediente) {
+        ingredientesNecesarios.push(ingrediente);
+      });
+    }
+  });
+
+  return ingredientesNecesarios;
 }
 
 function actualizarContadorAlergenos() {
@@ -476,6 +530,18 @@ function cargarMovimientos() {
   }
 }
 
+function guardarProducciones() {
+  localStorage.setItem("producciones", JSON.stringify(producciones));
+}
+
+function cargarProducciones() {
+  const produccionesGuardadas = localStorage.getItem("producciones");
+
+  if (produccionesGuardadas) {
+    producciones = JSON.parse(produccionesGuardadas);
+  }
+}
+
 /* =========================
    5. Render
 ========================= */
@@ -632,19 +698,17 @@ ingredientesFiltrados.forEach(function (ingrediente) {
     const estadoStock = obtenerEstadoStock(ingrediente);
     row.innerHTML = `
       <td>${ingrediente.nombre}</td>
-      <td>${ingrediente.unidad}</td>
+      <td class="${estadoStock.clase}"> ${estadoStock.texto} </td>
+      <td>${ingrediente.stockActual}</td>
+      <td>${ingrediente.stockMinimo}</td>
       <td>${ingrediente.cantidad}</td>
+      <td>${ingrediente.unidad}</td>
       <td>${ingrediente.precio.toFixed(2)} €</td>
       <td>${ingrediente.merma.toFixed(2)}%</td>
-      
       <td>${cantidadUtil.toFixed(2)} ${ingrediente.unidad}</td>
       <td>${costeUnitario.toFixed(2)} €/${ingrediente.unidad}</td>
       <td>${costeBase.toFixed(2)} €/base</td>
-      <td>${ingrediente.stockActual}</td>
-      <td>${ingrediente.stockMinimo}</td>
-      <td class="${estadoStock.clase}">
-          ${estadoStock.texto}
-      </td>
+         
       <td>
         <button class="btn-edit" data-id="${ingrediente.id}" type="button">  ✏️ Editar</button>
         <button class="btn-danger" data-id="${ingrediente.id}" type="button">  🗑️ Eliminar</button>
@@ -806,6 +870,30 @@ function cargarOpcionesComponentes() {
   });
 }
 
+function cargarOpcionesProduccionRecetas() {
+
+  produccionRecetaInput.innerHTML = `
+    <option value="">
+      Selecciona una receta
+    </option>
+  `;
+
+  const recetasOrdenadas =
+    [...recetas].sort(function (a, b) {
+      return a.nombre.localeCompare(b.nombre);
+    });
+
+  recetasOrdenadas.forEach(function (receta) {
+
+    const option = document.createElement("option");
+
+    option.value = receta.id;
+    option.textContent = receta.nombre;
+
+    produccionRecetaInput.appendChild(option);
+  });
+}
+
 function renderizarComponentes() {
   componentesBody.innerHTML = "";
 
@@ -913,6 +1001,61 @@ function renderizarUnidadesComponente() {
   });
 }
 
+function obtenerNombreRecetaPorId(id) {
+  const receta = recetas.find(function (receta) {
+    return receta.id === id;
+  });
+
+  return receta ? receta.nombre : "Receta no encontrada";
+}
+
+function renderizarProducciones() {
+  produccionesBody.innerHTML = "";
+
+  const produccionesOrdenadas = [...producciones].reverse();
+  const produccionesFiltradas =
+    produccionesOrdenadas.filter(function (produccion) {
+      const nombreReceta = obtenerNombreRecetaPorId(produccion.recetaId).toLowerCase();
+      const nota = produccion.nota.toLowerCase();
+
+      return (
+        nombreReceta.includes(filtroProduccion) ||
+        nota.includes(filtroProduccion)
+      );
+    });
+
+  produccionesFiltradas.forEach(function (produccion) {
+    const row = document.createElement("tr");
+
+  row.innerHTML = `
+    <td>${new Date(produccion.fecha).toLocaleString()}</td>
+    <td>${obtenerNombreRecetaPorId(produccion.recetaId)}</td>
+    <td>${produccion.cantidad}</td>
+    <td>${produccion.nota || "-"}</td>
+    <td>
+        ${produccion.revertida
+          ? `<span class="produccion-revertida">Revertida</span>`
+          : `<span class="produccion-activa">Activa</span>`
+        }
+  </td>
+  <td>
+    ${
+      produccion.revertida
+        ? "✅ Revertida"
+        : `<button
+            class="btn-revertir-produccion"
+            data-id="${produccion.id}"
+            type="button"
+          >
+            ↩️ Revertir
+          </button>`
+    }
+  </td>
+`;
+    produccionesBody.appendChild(row);
+  });
+}
+
 
 
 /* =========================
@@ -929,6 +1072,85 @@ movimientoIngredienteInput.addEventListener(
   "change",
   renderizarUnidadesMovimiento
 );
+
+buscarProduccionInput.addEventListener("input", function () {
+  filtroProduccion =
+    buscarProduccionInput.value.toLowerCase();
+
+  renderizarProducciones();
+});
+
+produccionesBody.addEventListener("click", function (event) {
+  if (!event.target.classList.contains("btn-revertir-produccion")) {
+    return;
+  }
+
+  const produccionId = Number(event.target.dataset.id);
+
+  const produccion = producciones.find(function (produccion) {
+    return produccion.id === produccionId;
+  });
+
+  if (!produccion || produccion.revertida) {
+    return;
+  }
+
+  const receta = recetas.find(function (receta) {
+    return receta.id === produccion.recetaId;
+  });
+
+  if (!receta) {
+    alert("No se ha encontrado la receta original.");
+    return;
+  }
+
+  if (
+    !confirm(
+      `¿Seguro que quieres revertir la producción de ${produccion.cantidad} x ${receta.nombre}?`
+    )
+  ) {
+    return;
+  }
+
+  const ingredientesNecesarios =
+    obtenerIngredientesDeReceta(
+      receta,
+      produccion.cantidad
+    );
+
+  ingredientesNecesarios.forEach(function (item) {
+    const ingrediente = ingredientes.find(function (ingrediente) {
+      return ingrediente.id === item.ingredienteId;
+    });
+
+    if (!ingrediente) {
+      return;
+    }
+
+    const movimiento = {
+      id: Date.now() + Math.random(),
+      ingredienteId: ingrediente.id,
+      tipo: "entrada",
+      cantidad: item.cantidad,
+      unidad: item.unidad,
+      fecha: new Date().toISOString(),
+      nota: `Reversión producción: ${receta.nombre}`
+    };
+
+    aplicarMovimientoStock(movimiento);
+    movimientos.push(movimiento);
+  });
+
+  produccion.revertida = true;
+
+  guardarIngredientes();
+  guardarMovimientos();
+  guardarProducciones();
+  renderizarIngredientes();
+  renderizarRecetas();
+  renderizarMovimientos();
+  renderizarProducciones();
+});
 
 movimientoForm.addEventListener("submit", function (event) {
   event.preventDefault();
@@ -955,6 +1177,144 @@ movimientoForm.addEventListener("submit", function (event) {
   renderizarMovimientos();
 
   movimientoForm.reset();
+});
+
+produccionForm.addEventListener("submit", function (event) {
+  event.preventDefault();
+
+  const recetaId = Number(produccionRecetaInput.value);
+  const receta = recetas.find(function (receta) {
+    return receta.id === recetaId;
+  });
+
+  if (!receta) {
+    alert("Selecciona una receta válida.");
+    return;
+  }
+
+  const cantidadProduccion = Number(produccionCantidadInput.value);
+  const ingredientesNecesarios =
+    obtenerIngredientesDeReceta(
+      receta,
+      cantidadProduccion
+    );
+
+  const ingredientesConFaltaStock = [];
+
+ingredientesNecesarios.forEach(function (item) {
+
+  const ingrediente =
+    ingredientes.find(function (ingrediente) {
+      return ingrediente.id === item.ingredienteId;
+    });
+
+  if (!ingrediente) {
+    return;
+  }
+
+  const cantidadNecesaria =
+    convertirCantidadMovimiento(
+      item.cantidad,
+      item.unidad,
+      ingrediente.unidad
+    );
+
+  if (cantidadNecesaria > ingrediente.stockActual) {
+
+    ingredientesConFaltaStock.push(
+      `- ${ingrediente.nombre} ` +
+      `(necesitas ${cantidadNecesaria.toFixed(2)} ${ingrediente.unidad}, ` +
+      `tienes ${ingrediente.stockActual.toFixed(2)} ${ingrediente.unidad})`
+    );
+  }
+});
+
+if (ingredientesConFaltaStock.length > 0) {
+
+  const continuar =
+    confirm(
+      `⚠️ Stock insuficiente detectado:\n\n` +
+      ingredientesConFaltaStock.join("\n") +
+      `\n\n¿Quieres continuar igualmente?`
+    );
+
+  if (!continuar) {
+    return;
+  }
+}
+
+  const resumenProduccion =
+  ingredientesNecesarios
+    .map(function (item) {
+      const ingrediente =
+        ingredientes.find(function (ingrediente) {
+          return ingrediente.id === item.ingredienteId;
+        });
+
+      if (!ingrediente) {
+        return null;
+      }
+
+      return `- ${item.cantidad} ${item.unidad} ${ingrediente.nombre}`;
+    })
+    .filter(Boolean)
+    .join("\n");
+
+const confirmarProduccion =
+  confirm(
+    `Vas a producir ${cantidadProduccion} x ${receta.nombre}.\n\n` +
+    `Se descontará del inventario:\n` +
+    `${resumenProduccion}\n\n` +
+    `¿Quieres continuar?`
+  );
+
+if (!confirmarProduccion) {
+  return;
+}
+
+  ingredientesNecesarios.forEach(function (item) {
+    const ingrediente =
+      ingredientes.find(function (ingrediente) {
+        return ingrediente.id === item.ingredienteId;
+      });
+
+    if (!ingrediente) {
+      return;
+    }
+
+    const movimiento = {
+      id: Date.now() + Math.random(),
+      ingredienteId: ingrediente.id,
+      tipo: "salida",
+      cantidad: item.cantidad,
+      unidad: item.unidad,
+      fecha: new Date().toISOString(),
+      nota: `Producción receta: ${receta.nombre}`
+    };
+
+    aplicarMovimientoStock(movimiento);
+    movimientos.push(movimiento);
+  });
+
+  const produccion = {
+    id: Date.now(),
+    recetaId: receta.id,
+    cantidad: cantidadProduccion,
+    fecha: new Date().toISOString(),
+    nota: produccionNotaInput.value,
+    revertida: false
+  };
+
+  producciones.push(produccion);
+
+  guardarIngredientes();
+  guardarMovimientos();
+  guardarProducciones();
+  renderizarIngredientes();
+  renderizarRecetas();
+  renderizarMovimientos();
+  renderizarProducciones();
+  produccionForm.reset();
 });
 
 function activarScrollHorizontalDrag() {
@@ -1111,6 +1471,9 @@ alergenosInputs.forEach(function (checkbox) {
 recetaForm.addEventListener("submit", function (event) {
   event.preventDefault();
 
+  const recetaExistente = recetas.find(function (receta) {
+  return receta.id === recetaEditando;
+});
   const receta = {
     id: recetaEditando || Date.now(),
     nombre: recetaNombreInput.value,
@@ -1119,7 +1482,7 @@ recetaForm.addEventListener("submit", function (event) {
     rendimientoUnidad: recetaRendimientoUnidadInput.value,
     raciones: Number(recetaRacionesInput.value),
     precioVenta: Number(recetaPrecioVentaInput.value),
-    componentes: []
+    componentes: recetaExistente ? recetaExistente.componentes : []
   };
 const recetaDuplicada = recetas.find(function (receta) {
   return (
@@ -1242,6 +1605,8 @@ componenteForm.addEventListener("submit", function (event) {
 
   guardarRecetas();
   renderizarComponentes();
+  renderizarRecetas();
+  cargarOpcionesProduccionRecetas();
   componenteForm.reset();
 });
 
@@ -1264,6 +1629,8 @@ componentesBody.addEventListener("click", function (event) {
 
     guardarRecetas();
     renderizarComponentes();
+    renderizarRecetas();
+    cargarOpcionesProduccionRecetas();
   }
 });
 
@@ -1288,7 +1655,10 @@ buscarRecetaInput.addEventListener("input", function () {
 cargarIngredientes();
 cargarRecetas();
 cargarMovimientos();
+cargarProducciones();
 cargarOpcionesMovimientoIngredientes();
+cargarOpcionesProduccionRecetas();
 renderizarMovimientos();
+renderizarProducciones();
 activarScrollHorizontalDrag();
 

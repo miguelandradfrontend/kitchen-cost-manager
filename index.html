@@ -106,16 +106,16 @@
         <thead>
           <tr>
             <th>Nombre</th>
-            <th>Unidad</th>
+            <th>Estado stock</th>
+            <th>Stock actual</th>
+            <th>Stock mínimo</th>
             <th>Cantidad</th>
+            <th>Unidad</th>
             <th>Precio</th>
             <th>Merma</th>
             <th>Cantidad útil</th>
             <th>Coste unitario</th>
-            <th>Coste base</th>
-            <th>Stock actual</th>
-            <th>Stock mínimo</th>
-            <th>Estado stock</th>
+            <th>Coste base</th>          
             <th>Acción</th>
           </tr>
         </thead>
@@ -225,6 +225,81 @@
       <tbody id="movimientos-body"></tbody>
     </table>
   </div>
+</section>
+
+<section class="card">
+  <h2>Producción de recetas</h2>
+
+  <form id="produccion-form">
+    <div class="form-group">
+      <label for="produccion-receta">Receta</label>
+      <select id="produccion-receta" required>
+        <option value="">Selecciona una receta</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="produccion-cantidad">Cantidad a producir</label>
+      <input
+        id="produccion-cantidad"
+        type="number"
+        min="0.01"
+        step="0.01"
+        placeholder="Ej: 1"
+        required
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="produccion-nota">Nota</label>
+      <input
+        id="produccion-nota"
+        type="text"
+        placeholder="Ej: Producción diaria"
+      >
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-primary" type="submit">
+        Producir receta
+      </button>
+    </div>
+  </form>
+
+  <div class="info-box">
+    <p>
+      <strong>Producción:</strong> descuenta automáticamente del inventario los ingredientes necesarios para elaborar una receta.
+    </p>
+
+    <p>
+      <strong>Cantidad a producir:</strong> indica cuántas veces se ejecuta la receta completa. Ingredientes se descontaran en base a dicha cantidad.
+    </p>
+  </div>
+
+  <div class="search-container produccion-search-container">
+  <input
+    id="buscar-produccion"
+    type="text"
+    placeholder="🔍 Buscar producción..."
+  >
+</div>
+
+<div class="table-container producciones-table-container">
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Receta</th>
+        <th>Cantidad</th>
+        <th>Nota</th>
+        <th>Estado</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+
+    <tbody id="producciones-body"></tbody>
+  </table>
+</div>
 </section>
 
   <section id="recetas" class="card">
